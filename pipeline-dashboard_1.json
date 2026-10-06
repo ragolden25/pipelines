@@ -494,7 +494,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "pipeline_last_status{type=\"build\"} or on(target) label_replace(vector(-1), \"target\", \"debian13-base\", \"\", \"\") or on(target) label_replace(vector(-1), \"target\", \"debian13-go\", \"\", \"\") or on(target) label_replace(vector(-1), \"target\", \"debian13-node20\", \"\", \"\") or on(target) label_replace(vector(-1), \"target\", \"debian13-node22\", \"\", \"\") or on(target) label_replace(vector(-1), \"target\", \"debian13-node24\", \"\", \"\") or on(target) label_replace(vector(-1), \"target\", \"debian13-postgres18\", \"\", \"\")",
+          "expr": "pipeline_last_status{type=\"build\"} or on(target) label_replace(vector(-1), \"target\", \"debian13-base\", \"\", \"\") or on(target) label_replace(vector(-1), \"target\", \"debian13-go\", \"\", \"\") or on(target) label_replace(vector(-1), \"target\", \"debian13-node22\", \"\", \"\") or on(target) label_replace(vector(-1), \"target\", \"debian13-node24\", \"\", \"\") or on(target) label_replace(vector(-1), \"target\", \"debian13-postgres18\", \"\", \"\")",
           "instant": true,
           "range": false,
           "legendFormat": "{{target}}",
@@ -727,7 +727,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "pipeline_last_status{type=\"sync\",target!=\"setup\"} or (pipeline_last_status{type=\"sync\",target=\"setup\"} == 0) or on(target) label_replace(vector(-1), \"target\", \"debian13-base\", \"\", \"\") or on(target) label_replace(vector(-1), \"target\", \"debian13-go\", \"\", \"\") or on(target) label_replace(vector(-1), \"target\", \"debian13-node20\", \"\", \"\") or on(target) label_replace(vector(-1), \"target\", \"debian13-node22\", \"\", \"\") or on(target) label_replace(vector(-1), \"target\", \"debian13-node24\", \"\", \"\") or on(target) label_replace(vector(-1), \"target\", \"debian13-postgres18\", \"\", \"\")",
+          "expr": "pipeline_last_status{type=\"sync\",target!=\"setup\"} or (pipeline_last_status{type=\"sync\",target=\"setup\"} == 0) or on(target) label_replace(vector(-1), \"target\", \"debian13-base\", \"\", \"\") or on(target) label_replace(vector(-1), \"target\", \"debian13-go\", \"\", \"\") or on(target) label_replace(vector(-1), \"target\", \"debian13-node22\", \"\", \"\") or on(target) label_replace(vector(-1), \"target\", \"debian13-node24\", \"\", \"\") or on(target) label_replace(vector(-1), \"target\", \"debian13-postgres18\", \"\", \"\")",
           "instant": true,
           "range": false,
           "legendFormat": "{{target}}",

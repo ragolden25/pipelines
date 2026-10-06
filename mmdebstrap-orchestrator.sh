@@ -10,13 +10,13 @@ set -euo pipefail
 # Cron (0500 daily) - no IMAGES override, so the default list below is used:
 #   0 5 * * * /root/bin/mmdebstrap-orchestrator.sh
 # To build a subset by hand:
-#   IMAGES="go node20" /root/bin/mmdebstrap-orchestrator.sh
+#   IMAGES="go node22" /root/bin/mmdebstrap-orchestrator.sh
 
 # ---------------------------------------------------------------------
 # 1. Settings
 # ---------------------------------------------------------------------
 LOG="${LOG:-/root/bin/daily-build.log}"
-IMAGES="${IMAGES:-base go node20 node22 node24 postgres18}"
+IMAGES="${IMAGES:-base go node22 node24 postgres18}"
 BUILD_DIR="${BUILD_DIR:-/root/bin}"
 EMIT="${EMIT:-/usr/local/bin/emit_event.sh}"
 DIGEST_BASE_URL="${DIGEST_BASE_URL:-http://localhost/images}"

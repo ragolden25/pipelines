@@ -61,7 +61,6 @@ emit_status sync setup success "" 86400
 TARGETS=(
     "debian13-base|debian13-base-latest|Dockerfile.debian13.slim|container-forge/debian13-slim|both"
     "debian13-go|debian13-go-latest|Dockerfile.debian13.go|container-forge/debian13-go|both"
-    "debian13-node20|debian13-node20-latest|Dockerfile.debian13.node20|container-forge/debian13-node20|both"
     "debian13-node22|debian13-node22-latest|Dockerfile.debian13.node22|container-forge/debian13-node22|both"
     "debian13-node24|debian13-node24-latest|Dockerfile.debian13.node24|container-forge/debian13-node24|grafana"
     "debian13-postgres18|debian13-postgres18-latest|Dockerfile.debian13.postgres18|container-forge/debian13-postgres18|avocado"
@@ -84,7 +83,6 @@ for TARGET in "${TARGETS[@]}"; do
     if ! wget -q --spider "${DIGEST_SIG_URL}"; then
         DIGEST_SIG_URL="${BASE_URL}/${SUBDIR}-latest.digest.asc"
         [[ "$SUBDIR" == "debian13-go" ]] && DIGEST_SIG_URL="${BASE_URL}/debian13-go-latest.digest.asc"
-        [[ "$SUBDIR" == "debian13-node20" ]] && DIGEST_SIG_URL="${BASE_URL}/debian13-node20-latest.digest.asc"
         [[ "$SUBDIR" == "debian13-node22" ]] && DIGEST_SIG_URL="${BASE_URL}/debian13-node22-latest.digest.asc"
         [[ "$SUBDIR" == "debian13-distroless" ]] && DIGEST_SIG_URL="${BASE_URL}/debian13-distroless-latest.digest.asc"
     fi
@@ -180,5 +178,5 @@ done
 CURRENT=""
 
 echo "========================================================="
-echo "[$(date)] Full sync completed for debian13-base, debian13-go, debian13-node20, debian13-node22, debian13-node24, and debian13-postgres18."
+echo "[$(date)] Full sync completed for debian13-base, debian13-go, debian13-node22, debian13-node24, and debian13-postgres18."
 echo "========================================================="

@@ -278,14 +278,33 @@ docker run --rm "${DOCKER_USER[@]}" \
   pnpm peers check 2>&1 | tee -a "${LOG_FILE}" || \
   echo "--- pnpm peers check reported issues (logged only) ---" | tee -a "${LOG_FILE}"
 
-echo "=== 14. Compressing compiled system UI bundles ==="
-# Runs in the Node 24 container (host Node/pnpm are not used), as the invoking
-# user so it can replace the node_modules the earlier steps created.
+echo "=== 14. Building and compressing UI assets ==="
+# The Makefile needs Node/pnpm for the UI and Go for the rest, and no single image has
+# both, so run it in two stages:
+#   14a  Node 24 container: ui-install + ui-build. (Makefile.common probes `go` while
+#        parsing and prints "make: go: No such file" warnings here; they are harmless
+#        because none of these two targets runs Go.)
+#   14b  Go container: assets-compress, with the UI targets marked up to date (-o) so
+#        make does not try to run pnpm in an image that has none.
+# `make ui-install` runs a plain `pnpm install`; it must use the same store as the earlier
+# installs (otherwise pnpm wants to purge node_modules and, with no TTY, aborts).
 docker run --rm "${DOCKER_USER[@]}" \
+  -e npm_config_store_dir=/pnpm-store \
+  -e npm_config_confirm_modules_purge=false \
+  -e npm_config_network_concurrency=4 \
+  -e npm_config_fetch_timeout=300000 \
+  -e npm_config_fetch_retries=5 \
+  -v "${PNPM_STORE_HOST}:/pnpm-store" \
   -v "${SRC_DIR}:/workspace" \
   -w /workspace \
   ${NODE_IMAGE} \
-  make assets assets-compress 2>&1 | tee -a "${LOG_FILE}"
+  make ui-install ui-build 2>&1 | tee -a "${LOG_FILE}"
+
+docker run --rm "${DOCKER_USER[@]}" \
+  -v "${SRC_DIR}:/workspace" \
+  -w /workspace \
+  ${GO_IMAGE} \
+  make -o ui-install -o ui-build -o assets assets-compress 2>&1 | tee -a "${LOG_FILE}"
 
 echo "=== 15. Executing compilation rules for main Go binaries ==="
 (

@@ -16,6 +16,33 @@ GO_IMAGE="container-forge/debian13-go:latest"
 # HOME/caches point at /tmp because the user has no home inside the container.
 DOCKER_USER=(--user "$(id -u):$(id -g)" -e HOME=/tmp -e GOCACHE=/tmp/go-cache -e GOPATH=/tmp/go)
 
+# npm registry fetches from this host are slow and time out under pnpm's default
+# parallelism (ERR_SOCKET_TIMEOUT). Fetch gently, wait longer, retry more, and keep
+# a persistent pnpm store so a retry (or the next run) resumes instead of starting over.
+PNPM_STORE_HOST="/opt/ansible/staged/prometheus/.pnpm-store"
+mkdir -p "${PNPM_STORE_HOST}"
+PNPM_NET=(--network-concurrency=4 --fetch-timeout=300000 --fetch-retries=5
+          --fetch-retry-mintimeout=10000 --fetch-retry-maxtimeout=120000
+          --store-dir=/pnpm-store)
+
+# pnpm_install <dir-relative-to-source-root>
+# Runs `pnpm install` in the Node 24 container; up to 3 attempts, each resuming from the store.
+pnpm_install() {
+  local subdir="$1" attempt
+  for attempt in 1 2 3; do
+    if docker run --rm "${DOCKER_USER[@]}" \
+         -v "${SRC_DIR}:/workspace" -v "${PNPM_STORE_HOST}:/pnpm-store" \
+         -w "/workspace/${subdir}" \
+         ${NODE_IMAGE} \
+         pnpm install "${PNPM_NET[@]}" 2>&1 | tee -a "${LOG_FILE}"; then
+      return 0
+    fi
+    echo "--- pnpm install in ${subdir} failed (attempt ${attempt}/3) ---" | tee -a "${LOG_FILE}"
+    sleep 15
+  done
+  return 1
+}
+
 # ------------------------------------------------------------
 # GLOBAL PNPM ENV (build-time only)
 # ------------------------------------------------------------
@@ -225,11 +252,7 @@ done
 
 echo "=== 12. Compiling local web asset requirements ==="
 
-docker run --rm "${DOCKER_USER[@]}" \
-  -v "${SRC_DIR}:/workspace" \
-  -w /workspace/web/ui/react-app \
-  ${NODE_IMAGE} \
-  pnpm install 2>&1 | tee -a "${LOG_FILE}"
+pnpm_install web/ui/react-app
 
 echo "=== Approving pnpm build scripts (react-app) ==="
 docker run --rm "${DOCKER_USER[@]}" \
@@ -238,11 +261,7 @@ docker run --rm "${DOCKER_USER[@]}" \
   ${NODE_IMAGE} \
   pnpm approve-builds --force 2>&1 | tee -a "${LOG_FILE}" || true
 
-docker run --rm "${DOCKER_USER[@]}" \
-  -v "${SRC_DIR}:/workspace" \
-  -w /workspace/web/ui \
-  ${NODE_IMAGE} \
-  pnpm install 2>&1 | tee -a "${LOG_FILE}"
+pnpm_install web/ui
 
 echo "=== Approving pnpm build scripts (web/ui) ==="
 docker run --rm "${DOCKER_USER[@]}" \

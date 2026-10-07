@@ -351,9 +351,15 @@ CLEAN_VERSION="${PROMETHEUS_VERSION//\"/}"
 
 cat << EOF > "${INVENTORY_FILE}"
 STAGED_PROMETHEUS_VERSION="${CLEAN_VERSION}"
+LATEST_STAGED_PROMETHEUS_VERSION="${CLEAN_VERSION}"
 STAGED_TIMESTAMP="$(date -Iseconds)"
+STAGED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 EOF
 
+# sync-latest-version.sh reads <version dir>/inventory.env (one level above staged/).
+# Keep both copies identical: staged/inventory.env is what this script's own
+# "already staged?" check uses.
+cp -f "${INVENTORY_FILE}" "${BASE_DIR}/inventory.env"
 
 echo "=== 18. Clearing internal compiler cache frameworks ==="
 (
@@ -366,5 +372,9 @@ echo "=== 18. Clearing internal compiler cache frameworks ==="
     rm -rf "${SRC_DIR}/.cache" || true
 )
 
+echo "=== 19. Fixing staged ownership prior to sync ==="
+chown -R ansible:ansible "${BASE_DIR}" 2>/dev/null || true
+
+echo "=== 20. Syncing staged Prometheus into build structure ==="
 /opt/ansible/build/grafana_stack/prometheus/scripts/sync-latest-version.sh "${CLEAN_VERSION}"
 echo "=== Staging Complete! Prometheus ${PROMETHEUS_VERSION} stands ready for stack deployment ===" | tee -a "${LOG_FILE}"

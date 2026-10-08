@@ -89,7 +89,7 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "dateTimeAsLocal",
+          "unit": "time:DD MMM YYYY HH:mm",
           "color": {
             "mode": "fixed",
             "fixedColor": "#8b8b85"
@@ -812,8 +812,8 @@
     {
       "id": 11,
       "type": "stat",
-      "title": "ANSIBLE-FORGE · image scans",
-      "description": "Result of the last scan of each image.",
+      "title": "ANSIBLE-FORGE · image scans · Grafana stack",
+      "description": "Result of the last scan of each Grafana-stack image (Grafana, Prometheus, iDRAC, nginx; ccop and nucleus).",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
@@ -822,7 +822,7 @@
         "x": 0,
         "y": 19,
         "w": 24,
-        "h": 8
+        "h": 5
       },
       "targets": [
         {
@@ -830,7 +830,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "pipeline_last_status{type=\"scan\"}",
+          "expr": "pipeline_last_status{type=\"scan\",target=~\"(ccop|nucleus)/.*(grafana|prometheus|idrac|nginx).*\",target!~\".*(debian13-node20).*\"}",
           "instant": true,
           "range": false,
           "legendFormat": "{{target}}",
@@ -898,6 +898,180 @@
     },
     {
       "id": 12,
+      "type": "stat",
+      "title": "ANSIBLE-FORGE · image scans · Guacamole stack",
+      "description": "Result of the last scan of each Guacamole-stack image (Guacamole, guacd, Postgres, nginx; ccop and nucleus).",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 24,
+        "w": 24,
+        "h": 5
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "pipeline_last_status{type=\"scan\",target=~\"(ccop|nucleus)/.*(guac|postgres|nginx).*\",target!~\".*(debian13-node20).*\"}",
+          "instant": true,
+          "range": false,
+          "legendFormat": "{{target}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "text": "OK",
+                  "color": "#0ca30c",
+                  "index": 0
+                },
+                "0": {
+                  "text": "FAILED",
+                  "color": "#d03b3b",
+                  "index": 1
+                },
+                "-1": {
+                  "text": "… NOT REPORTING YET",
+                  "color": "#fab219",
+                  "index": 2
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#d03b3b",
+                "value": null
+              },
+              {
+                "color": "#0ca30c",
+                "value": 1
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "noValue": "no data yet"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 13,
+      "type": "stat",
+      "title": "ANSIBLE-FORGE · image scans · base images and others",
+      "description": "Container-forge base images, plus any scanned image that matches neither stack row.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 29,
+        "w": 24,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "pipeline_last_status{type=\"scan\",target=~\"container-forge/.*\",target!~\".*(debian13-node20).*\"} or pipeline_last_status{type=\"scan\",target!~\"container-forge/.*\",target!~\"(ccop|nucleus)/.*(grafana|prometheus|idrac|nginx).*\",target!~\"(ccop|nucleus)/.*(guac|postgres|nginx).*\",target!~\".*(debian13-node20).*\"}",
+          "instant": true,
+          "range": false,
+          "legendFormat": "{{target}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "text": "OK",
+                  "color": "#0ca30c",
+                  "index": 0
+                },
+                "0": {
+                  "text": "FAILED",
+                  "color": "#d03b3b",
+                  "index": 1
+                },
+                "-1": {
+                  "text": "… NOT REPORTING YET",
+                  "color": "#fab219",
+                  "index": 2
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#d03b3b",
+                "value": null
+              },
+              {
+                "color": "#0ca30c",
+                "value": 1
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "noValue": "no data yet"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 14,
       "type": "table",
       "title": "VULNERABILITIES by image · ccop (latest scan)",
       "description": "Findings from each image's most recent scan. One row per image; images are never added together.",
@@ -907,7 +1081,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 27,
+        "y": 33,
         "w": 8,
         "h": 9
       },
@@ -1053,7 +1227,7 @@
       }
     },
     {
-      "id": 13,
+      "id": 15,
       "type": "table",
       "title": "VULNERABILITIES by image · nucleus (latest scan)",
       "description": "Findings from each image's most recent scan. One row per image; images are never added together.",
@@ -1063,7 +1237,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 27,
+        "y": 33,
         "w": 8,
         "h": 9
       },
@@ -1209,7 +1383,7 @@
       }
     },
     {
-      "id": 14,
+      "id": 16,
       "type": "table",
       "title": "VULNERABILITIES by image · container-forge base images (latest scan)",
       "description": "Findings from each image's most recent scan. One row per image; images are never added together.",
@@ -1219,7 +1393,7 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 27,
+        "y": 33,
         "w": 8,
         "h": 9
       },
@@ -1365,7 +1539,7 @@
       }
     },
     {
-      "id": 15,
+      "id": 17,
       "type": "table",
       "title": "TOP 10 vulnerabilities · ccop",
       "description": "Worst findings across this pipeline's images, ranked by severity then CVSS. 'Package' says what it pertains to; 'Images' is how many images carry it.",
@@ -1375,7 +1549,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 36,
+        "y": 42,
         "w": 8,
         "h": 10
       },
@@ -1507,7 +1681,7 @@
       }
     },
     {
-      "id": 16,
+      "id": 18,
       "type": "table",
       "title": "TOP 10 vulnerabilities · nucleus",
       "description": "Worst findings across this pipeline's images, ranked by severity then CVSS. 'Package' says what it pertains to; 'Images' is how many images carry it.",
@@ -1517,7 +1691,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 36,
+        "y": 42,
         "w": 8,
         "h": 10
       },
@@ -1649,7 +1823,7 @@
       }
     },
     {
-      "id": 17,
+      "id": 19,
       "type": "table",
       "title": "JOB FRESHNESS · when did each job last run?",
       "description": "Last run / last success are 'how long ago'. 'Due every' is how often the job should run (on demand = no schedule). 'Overdue by' stays 0 until a scheduled job misses its slot.",
@@ -1659,7 +1833,7 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 36,
+        "y": 42,
         "w": 8,
         "h": 10
       },

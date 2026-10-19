@@ -55,6 +55,30 @@
   "templating": {
     "list": [
       {
+        "name": "quarter",
+        "label": "Quarter",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS_PROMETHEUS}"
+        },
+        "query": {
+          "query": "label_values(release_build_info, quarter)",
+          "refId": "q"
+        },
+        "definition": "label_values(release_build_info, quarter)",
+        "refresh": 2,
+        "sort": 2,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".+",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        }
+      },
+      {
         "name": "view",
         "label": "Scan results",
         "type": "custom",
@@ -839,7 +863,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 14,
+        "y": 21,
         "w": 8,
         "h": 5
       },
@@ -926,7 +950,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 14,
+        "y": 21,
         "w": 8,
         "h": 5
       },
@@ -1013,7 +1037,7 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 14,
+        "y": 21,
         "w": 8,
         "h": 5
       },
@@ -1091,18 +1115,18 @@
     },
     {
       "id": 13,
-      "type": "stat",
-      "title": "ANSIBLE-FORGE · image scans · Grafana stack",
-      "description": "Result of the last scan of each Grafana-stack image (Grafana, Prometheus, iDRAC, nginx; ccop and nucleus).",
+      "type": "table",
+      "title": "GRAFANA STACK · QUARTER builds · ccop (functional / dev)",
+      "description": "What each quarter released (read from the quarter build directories by emit_release_ledger.sh). Status: green 'built + scan OK' | red 'scan FAILED' | amber 'built, no scan yet' | grey 'not built yet'. The scan result is the latest scan of that exact version.",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
       },
       "gridPos": {
         "x": 0,
-        "y": 19,
-        "w": 24,
-        "h": 5
+        "y": 40,
+        "w": 12,
+        "h": 8
       },
       "targets": [
         {
@@ -1110,86 +1134,172 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "pipeline_last_status{type=\"scan\",target=~\"(ccop|nucleus)/.*(grafana|prometheus|idrac|nginx).*\",target!~\".*(debian13-node20).*\"}",
+          "expr": "((release_build_info{stack=\"grafana\",class=\"ccop\",quarter=~\"$quarter\",version!=\"-\"} * 0 + 1) * on(image, version) group_left() label_replace(pipeline_last_status{type=\"scan\"} * on(target) group_left(version) (pipeline_info{type=\"scan\"} * 0 + 1), \"image\", \"$1\", \"target\", \"(.*)\")) or ((release_build_info{stack=\"grafana\",class=\"ccop\",quarter=~\"$quarter\",version!=\"-\"} * 0 + 2) unless on(image, version) label_replace(pipeline_last_status{type=\"scan\"} * on(target) group_left(version) (pipeline_info{type=\"scan\"} * 0 + 1), \"image\", \"$1\", \"target\", \"(.*)\")) or (release_build_info{stack=\"grafana\",class=\"ccop\",quarter=~\"$quarter\",version=\"-\"} * 0 + 3)",
           "instant": true,
           "range": false,
-          "legendFormat": "{{target}}",
-          "refId": "A"
+          "legendFormat": "",
+          "refId": "A",
+          "format": "table"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "release_build_info{stack=\"grafana\",class=\"ccop\",quarter=~\"$quarter\"} * 1000",
+          "instant": true,
+          "range": false,
+          "legendFormat": "",
+          "refId": "B",
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "job": true,
+              "instance": true,
+              "host": true,
+              "stack": true,
+              "class": true,
+              "image": true
+            },
+            "renameByName": {
+              "quarter": "Quarter",
+              "component": "Component",
+              "version": "Version",
+              "Value #A": "Status",
+              "Value #B": "Build date"
+            },
+            "indexByName": {
+              "quarter": 0,
+              "component": 1,
+              "version": 2,
+              "Value #B": 3,
+              "Value #A": 4
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "Quarter",
+                "desc": true
+              },
+              {
+                "field": "Component"
+              }
+            ]
+          }
         }
       ],
       "fieldConfig": {
         "defaults": {
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "1": {
-                  "text": "OK",
-                  "color": "#0ca30c",
-                  "index": 0
-                },
-                "0": {
-                  "text": "FAILED",
-                  "color": "#d03b3b",
-                  "index": 1
-                },
-                "-1": {
-                  "text": "… NOT REPORTING YET",
-                  "color": "#fab219",
-                  "index": 2
-                }
-              }
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
+          "noValue": "no quarter builds recorded yet"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Status"
+            },
+            "properties": [
               {
-                "color": "#d03b3b",
-                "value": null
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "1": {
+                        "text": "built + scan OK",
+                        "color": "#0ca30c",
+                        "index": 0
+                      },
+                      "0": {
+                        "text": "scan FAILED",
+                        "color": "#d03b3b",
+                        "index": 1
+                      },
+                      "2": {
+                        "text": "built, no scan yet",
+                        "color": "#fab219",
+                        "index": 2
+                      },
+                      "3": {
+                        "text": "not built yet",
+                        "color": "#8b8b85",
+                        "index": 3
+                      }
+                    }
+                  }
+                ]
               },
               {
-                "color": "#0ca30c",
-                "value": 1
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
               }
             ]
           },
-          "color": {
-            "mode": "thresholds"
-          },
-          "noValue": "no data yet"
-        },
-        "overrides": []
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Build date"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "time:DD MMM YYYY"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "text": "",
+                        "index": 0
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
       },
       "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "name",
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center",
-        "orientation": "auto"
+        "showHeader": true,
+        "cellHeight": "sm"
       }
     },
     {
       "id": 14,
-      "type": "stat",
-      "title": "ANSIBLE-FORGE · image scans · Guacamole stack",
-      "description": "Result of the last scan of each Guacamole-stack image (Guacamole, guacd, Postgres, nginx; ccop and nucleus).",
+      "type": "table",
+      "title": "GRAFANA STACK · WEEKLY builds · ccop (functional / dev)",
+      "description": "Weekly canary builds (weekly_build_<component> roles). Week = ISO week number of the year. Version = the upstream version built that week, so version changes show up from week to week. Status: green 'built + scan OK' | red 'FAILED' | amber 'waiting on staging' | orange 'not completed' (an earlier step failed). The newest four weeks are kept.",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
       },
       "gridPos": {
-        "x": 0,
-        "y": 24,
-        "w": 24,
-        "h": 5
+        "x": 12,
+        "y": 40,
+        "w": 12,
+        "h": 8
       },
       "targets": [
         {
@@ -1197,74 +1307,1142 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "pipeline_last_status{type=\"scan\",target=~\"(ccop|nucleus)/.*(guac|postgres|nginx).*\",target!~\".*(debian13-node20).*\"}",
+          "expr": "pipeline_weekly_build{stack=\"grafana\",class=\"ccop\"}",
           "instant": true,
           "range": false,
-          "legendFormat": "{{target}}",
-          "refId": "A"
+          "legendFormat": "",
+          "refId": "A",
+          "format": "table"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "pipeline_weekly_build_timestamp_seconds{stack=\"grafana\",class=\"ccop\"} * 1000",
+          "instant": true,
+          "range": false,
+          "legendFormat": "",
+          "refId": "B",
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "job": true,
+              "instance": true,
+              "host": true,
+              "stack": true,
+              "class": true,
+              "quarter": true
+            },
+            "renameByName": {
+              "week": "Week",
+              "component": "Component",
+              "version": "Version",
+              "Value #A": "Status",
+              "Value #B": "Build date"
+            },
+            "indexByName": {
+              "week": 0,
+              "component": 1,
+              "version": 2,
+              "Value #B": 3,
+              "Value #A": 4
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "Week",
+                "desc": true
+              },
+              {
+                "field": "Component"
+              }
+            ]
+          }
         }
       ],
       "fieldConfig": {
         "defaults": {
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "1": {
-                  "text": "OK",
-                  "color": "#0ca30c",
-                  "index": 0
-                },
-                "0": {
-                  "text": "FAILED",
-                  "color": "#d03b3b",
-                  "index": 1
-                },
-                "-1": {
-                  "text": "… NOT REPORTING YET",
-                  "color": "#fab219",
-                  "index": 2
-                }
-              }
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
+          "noValue": "no weekly builds recorded yet"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Status"
+            },
+            "properties": [
               {
-                "color": "#d03b3b",
-                "value": null
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "1": {
+                        "text": "built + scan OK",
+                        "color": "#0ca30c",
+                        "index": 0
+                      },
+                      "0": {
+                        "text": "FAILED",
+                        "color": "#d03b3b",
+                        "index": 1
+                      },
+                      "2": {
+                        "text": "waiting on staging",
+                        "color": "#fab219",
+                        "index": 2
+                      },
+                      "3": {
+                        "text": "not completed",
+                        "color": "#ec835a",
+                        "index": 3
+                      }
+                    }
+                  }
+                ]
               },
               {
-                "color": "#0ca30c",
-                "value": 1
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
               }
             ]
           },
-          "color": {
-            "mode": "thresholds"
-          },
-          "noValue": "no data yet"
-        },
-        "overrides": []
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Build date"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "time:DD MMM YYYY"
+              }
+            ]
+          }
+        ]
       },
       "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "name",
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center",
-        "orientation": "auto"
+        "showHeader": true,
+        "cellHeight": "sm"
       }
     },
     {
       "id": 15,
+      "type": "table",
+      "title": "GRAFANA STACK · QUARTER builds · nucleus (hardened)",
+      "description": "What each quarter released (read from the quarter build directories by emit_release_ledger.sh). Status: green 'built + scan OK' | red 'scan FAILED' | amber 'built, no scan yet' | grey 'not built yet'. The scan result is the latest scan of that exact version.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 48,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "((release_build_info{stack=\"grafana\",class=\"nucleus\",quarter=~\"$quarter\",version!=\"-\"} * 0 + 1) * on(image, version) group_left() label_replace(pipeline_last_status{type=\"scan\"} * on(target) group_left(version) (pipeline_info{type=\"scan\"} * 0 + 1), \"image\", \"$1\", \"target\", \"(.*)\")) or ((release_build_info{stack=\"grafana\",class=\"nucleus\",quarter=~\"$quarter\",version!=\"-\"} * 0 + 2) unless on(image, version) label_replace(pipeline_last_status{type=\"scan\"} * on(target) group_left(version) (pipeline_info{type=\"scan\"} * 0 + 1), \"image\", \"$1\", \"target\", \"(.*)\")) or (release_build_info{stack=\"grafana\",class=\"nucleus\",quarter=~\"$quarter\",version=\"-\"} * 0 + 3)",
+          "instant": true,
+          "range": false,
+          "legendFormat": "",
+          "refId": "A",
+          "format": "table"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "release_build_info{stack=\"grafana\",class=\"nucleus\",quarter=~\"$quarter\"} * 1000",
+          "instant": true,
+          "range": false,
+          "legendFormat": "",
+          "refId": "B",
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "job": true,
+              "instance": true,
+              "host": true,
+              "stack": true,
+              "class": true,
+              "image": true
+            },
+            "renameByName": {
+              "quarter": "Quarter",
+              "component": "Component",
+              "version": "Version",
+              "Value #A": "Status",
+              "Value #B": "Build date"
+            },
+            "indexByName": {
+              "quarter": 0,
+              "component": 1,
+              "version": 2,
+              "Value #B": 3,
+              "Value #A": 4
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "Quarter",
+                "desc": true
+              },
+              {
+                "field": "Component"
+              }
+            ]
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "no quarter builds recorded yet"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Status"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "1": {
+                        "text": "built + scan OK",
+                        "color": "#0ca30c",
+                        "index": 0
+                      },
+                      "0": {
+                        "text": "scan FAILED",
+                        "color": "#d03b3b",
+                        "index": 1
+                      },
+                      "2": {
+                        "text": "built, no scan yet",
+                        "color": "#fab219",
+                        "index": 2
+                      },
+                      "3": {
+                        "text": "not built yet",
+                        "color": "#8b8b85",
+                        "index": 3
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Build date"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "time:DD MMM YYYY"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "text": "",
+                        "index": 0
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      }
+    },
+    {
+      "id": 16,
+      "type": "table",
+      "title": "GRAFANA STACK · WEEKLY builds · nucleus (hardened)",
+      "description": "Weekly canary builds (weekly_build_<component> roles). Week = ISO week number of the year. Version = the upstream version built that week, so version changes show up from week to week. Status: green 'built + scan OK' | red 'FAILED' | amber 'waiting on staging' | orange 'not completed' (an earlier step failed). The newest four weeks are kept.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 48,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "pipeline_weekly_build{stack=\"grafana\",class=\"nucleus\"}",
+          "instant": true,
+          "range": false,
+          "legendFormat": "",
+          "refId": "A",
+          "format": "table"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "pipeline_weekly_build_timestamp_seconds{stack=\"grafana\",class=\"nucleus\"} * 1000",
+          "instant": true,
+          "range": false,
+          "legendFormat": "",
+          "refId": "B",
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "job": true,
+              "instance": true,
+              "host": true,
+              "stack": true,
+              "class": true,
+              "quarter": true
+            },
+            "renameByName": {
+              "week": "Week",
+              "component": "Component",
+              "version": "Version",
+              "Value #A": "Status",
+              "Value #B": "Build date"
+            },
+            "indexByName": {
+              "week": 0,
+              "component": 1,
+              "version": 2,
+              "Value #B": 3,
+              "Value #A": 4
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "Week",
+                "desc": true
+              },
+              {
+                "field": "Component"
+              }
+            ]
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "no weekly builds recorded yet"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Status"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "1": {
+                        "text": "built + scan OK",
+                        "color": "#0ca30c",
+                        "index": 0
+                      },
+                      "0": {
+                        "text": "FAILED",
+                        "color": "#d03b3b",
+                        "index": 1
+                      },
+                      "2": {
+                        "text": "waiting on staging",
+                        "color": "#fab219",
+                        "index": 2
+                      },
+                      "3": {
+                        "text": "not completed",
+                        "color": "#ec835a",
+                        "index": 3
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Build date"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "time:DD MMM YYYY"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      }
+    },
+    {
+      "id": 17,
+      "type": "table",
+      "title": "GUACAMOLE STACK · QUARTER builds · ccop (functional / dev)",
+      "description": "What each quarter released (read from the quarter build directories by emit_release_ledger.sh). Status: green 'built + scan OK' | red 'scan FAILED' | amber 'built, no scan yet' | grey 'not built yet'. The scan result is the latest scan of that exact version.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 56,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "((release_build_info{stack=\"guac\",class=\"ccop\",quarter=~\"$quarter\",version!=\"-\"} * 0 + 1) * on(image, version) group_left() label_replace(pipeline_last_status{type=\"scan\"} * on(target) group_left(version) (pipeline_info{type=\"scan\"} * 0 + 1), \"image\", \"$1\", \"target\", \"(.*)\")) or ((release_build_info{stack=\"guac\",class=\"ccop\",quarter=~\"$quarter\",version!=\"-\"} * 0 + 2) unless on(image, version) label_replace(pipeline_last_status{type=\"scan\"} * on(target) group_left(version) (pipeline_info{type=\"scan\"} * 0 + 1), \"image\", \"$1\", \"target\", \"(.*)\")) or (release_build_info{stack=\"guac\",class=\"ccop\",quarter=~\"$quarter\",version=\"-\"} * 0 + 3)",
+          "instant": true,
+          "range": false,
+          "legendFormat": "",
+          "refId": "A",
+          "format": "table"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "release_build_info{stack=\"guac\",class=\"ccop\",quarter=~\"$quarter\"} * 1000",
+          "instant": true,
+          "range": false,
+          "legendFormat": "",
+          "refId": "B",
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "job": true,
+              "instance": true,
+              "host": true,
+              "stack": true,
+              "class": true,
+              "image": true
+            },
+            "renameByName": {
+              "quarter": "Quarter",
+              "component": "Component",
+              "version": "Version",
+              "Value #A": "Status",
+              "Value #B": "Build date"
+            },
+            "indexByName": {
+              "quarter": 0,
+              "component": 1,
+              "version": 2,
+              "Value #B": 3,
+              "Value #A": 4
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "Quarter",
+                "desc": true
+              },
+              {
+                "field": "Component"
+              }
+            ]
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "no quarter builds recorded yet"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Status"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "1": {
+                        "text": "built + scan OK",
+                        "color": "#0ca30c",
+                        "index": 0
+                      },
+                      "0": {
+                        "text": "scan FAILED",
+                        "color": "#d03b3b",
+                        "index": 1
+                      },
+                      "2": {
+                        "text": "built, no scan yet",
+                        "color": "#fab219",
+                        "index": 2
+                      },
+                      "3": {
+                        "text": "not built yet",
+                        "color": "#8b8b85",
+                        "index": 3
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Build date"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "time:DD MMM YYYY"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "text": "",
+                        "index": 0
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      }
+    },
+    {
+      "id": 18,
+      "type": "table",
+      "title": "GUACAMOLE STACK · WEEKLY builds · ccop (functional / dev)",
+      "description": "Weekly canary builds (weekly_build_<component> roles). Week = ISO week number of the year. Version = the upstream version built that week, so version changes show up from week to week. Status: green 'built + scan OK' | red 'FAILED' | amber 'waiting on staging' | orange 'not completed' (an earlier step failed). The newest four weeks are kept.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 56,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "pipeline_weekly_build{stack=\"guac\",class=\"ccop\"}",
+          "instant": true,
+          "range": false,
+          "legendFormat": "",
+          "refId": "A",
+          "format": "table"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "pipeline_weekly_build_timestamp_seconds{stack=\"guac\",class=\"ccop\"} * 1000",
+          "instant": true,
+          "range": false,
+          "legendFormat": "",
+          "refId": "B",
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "job": true,
+              "instance": true,
+              "host": true,
+              "stack": true,
+              "class": true,
+              "quarter": true
+            },
+            "renameByName": {
+              "week": "Week",
+              "component": "Component",
+              "version": "Version",
+              "Value #A": "Status",
+              "Value #B": "Build date"
+            },
+            "indexByName": {
+              "week": 0,
+              "component": 1,
+              "version": 2,
+              "Value #B": 3,
+              "Value #A": 4
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "Week",
+                "desc": true
+              },
+              {
+                "field": "Component"
+              }
+            ]
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "no weekly builds recorded yet"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Status"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "1": {
+                        "text": "built + scan OK",
+                        "color": "#0ca30c",
+                        "index": 0
+                      },
+                      "0": {
+                        "text": "FAILED",
+                        "color": "#d03b3b",
+                        "index": 1
+                      },
+                      "2": {
+                        "text": "waiting on staging",
+                        "color": "#fab219",
+                        "index": 2
+                      },
+                      "3": {
+                        "text": "not completed",
+                        "color": "#ec835a",
+                        "index": 3
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Build date"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "time:DD MMM YYYY"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      }
+    },
+    {
+      "id": 19,
+      "type": "table",
+      "title": "GUACAMOLE STACK · QUARTER builds · nucleus (hardened)",
+      "description": "What each quarter released (read from the quarter build directories by emit_release_ledger.sh). Status: green 'built + scan OK' | red 'scan FAILED' | amber 'built, no scan yet' | grey 'not built yet'. The scan result is the latest scan of that exact version.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 64,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "((release_build_info{stack=\"guac\",class=\"nucleus\",quarter=~\"$quarter\",version!=\"-\"} * 0 + 1) * on(image, version) group_left() label_replace(pipeline_last_status{type=\"scan\"} * on(target) group_left(version) (pipeline_info{type=\"scan\"} * 0 + 1), \"image\", \"$1\", \"target\", \"(.*)\")) or ((release_build_info{stack=\"guac\",class=\"nucleus\",quarter=~\"$quarter\",version!=\"-\"} * 0 + 2) unless on(image, version) label_replace(pipeline_last_status{type=\"scan\"} * on(target) group_left(version) (pipeline_info{type=\"scan\"} * 0 + 1), \"image\", \"$1\", \"target\", \"(.*)\")) or (release_build_info{stack=\"guac\",class=\"nucleus\",quarter=~\"$quarter\",version=\"-\"} * 0 + 3)",
+          "instant": true,
+          "range": false,
+          "legendFormat": "",
+          "refId": "A",
+          "format": "table"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "release_build_info{stack=\"guac\",class=\"nucleus\",quarter=~\"$quarter\"} * 1000",
+          "instant": true,
+          "range": false,
+          "legendFormat": "",
+          "refId": "B",
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "job": true,
+              "instance": true,
+              "host": true,
+              "stack": true,
+              "class": true,
+              "image": true
+            },
+            "renameByName": {
+              "quarter": "Quarter",
+              "component": "Component",
+              "version": "Version",
+              "Value #A": "Status",
+              "Value #B": "Build date"
+            },
+            "indexByName": {
+              "quarter": 0,
+              "component": 1,
+              "version": 2,
+              "Value #B": 3,
+              "Value #A": 4
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "Quarter",
+                "desc": true
+              },
+              {
+                "field": "Component"
+              }
+            ]
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "no quarter builds recorded yet"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Status"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "1": {
+                        "text": "built + scan OK",
+                        "color": "#0ca30c",
+                        "index": 0
+                      },
+                      "0": {
+                        "text": "scan FAILED",
+                        "color": "#d03b3b",
+                        "index": 1
+                      },
+                      "2": {
+                        "text": "built, no scan yet",
+                        "color": "#fab219",
+                        "index": 2
+                      },
+                      "3": {
+                        "text": "not built yet",
+                        "color": "#8b8b85",
+                        "index": 3
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Build date"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "time:DD MMM YYYY"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "text": "",
+                        "index": 0
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      }
+    },
+    {
+      "id": 20,
+      "type": "table",
+      "title": "GUACAMOLE STACK · WEEKLY builds · nucleus (hardened)",
+      "description": "Weekly canary builds (weekly_build_<component> roles). Week = ISO week number of the year. Version = the upstream version built that week, so version changes show up from week to week. Status: green 'built + scan OK' | red 'FAILED' | amber 'waiting on staging' | orange 'not completed' (an earlier step failed). The newest four weeks are kept.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 64,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "pipeline_weekly_build{stack=\"guac\",class=\"nucleus\"}",
+          "instant": true,
+          "range": false,
+          "legendFormat": "",
+          "refId": "A",
+          "format": "table"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "pipeline_weekly_build_timestamp_seconds{stack=\"guac\",class=\"nucleus\"} * 1000",
+          "instant": true,
+          "range": false,
+          "legendFormat": "",
+          "refId": "B",
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "job": true,
+              "instance": true,
+              "host": true,
+              "stack": true,
+              "class": true,
+              "quarter": true
+            },
+            "renameByName": {
+              "week": "Week",
+              "component": "Component",
+              "version": "Version",
+              "Value #A": "Status",
+              "Value #B": "Build date"
+            },
+            "indexByName": {
+              "week": 0,
+              "component": 1,
+              "version": 2,
+              "Value #B": 3,
+              "Value #A": 4
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "Week",
+                "desc": true
+              },
+              {
+                "field": "Component"
+              }
+            ]
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "no weekly builds recorded yet"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Status"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "1": {
+                        "text": "built + scan OK",
+                        "color": "#0ca30c",
+                        "index": 0
+                      },
+                      "0": {
+                        "text": "FAILED",
+                        "color": "#d03b3b",
+                        "index": 1
+                      },
+                      "2": {
+                        "text": "waiting on staging",
+                        "color": "#fab219",
+                        "index": 2
+                      },
+                      "3": {
+                        "text": "not completed",
+                        "color": "#ec835a",
+                        "index": 3
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Build date"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "time:DD MMM YYYY"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      }
+    },
+    {
+      "id": 21,
       "type": "table",
       "title": "${view:text} by image · ccop (latest scan)",
       "description": "Pick what to show with the 'Scan results' dropdown at the top. One row per image; images are never added together.",
@@ -1274,7 +2452,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 29,
+        "y": 72,
         "w": 8,
         "h": 9
       },
@@ -1420,7 +2598,7 @@
       }
     },
     {
-      "id": 16,
+      "id": 22,
       "type": "table",
       "title": "${view:text} by image · nucleus (latest scan)",
       "description": "Pick what to show with the 'Scan results' dropdown at the top. One row per image; images are never added together.",
@@ -1430,7 +2608,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 29,
+        "y": 72,
         "w": 8,
         "h": 9
       },
@@ -1576,7 +2754,7 @@
       }
     },
     {
-      "id": 17,
+      "id": 23,
       "type": "table",
       "title": "${view:text} by image · container-forge base images (latest scan)",
       "description": "Pick what to show with the 'Scan results' dropdown at the top. One row per image; images are never added together.",
@@ -1586,7 +2764,7 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 29,
+        "y": 72,
         "w": 8,
         "h": 9
       },
@@ -1732,7 +2910,7 @@
       }
     },
     {
-      "id": 18,
+      "id": 24,
       "type": "table",
       "title": "TOP 10 vulnerabilities · ccop",
       "description": "Worst findings across this pipeline's images, ranked by severity then CVSS. 'Package' says what it pertains to; 'Images' is how many images carry it.",
@@ -1742,7 +2920,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 38,
+        "y": 81,
         "w": 8,
         "h": 10
       },
@@ -1874,7 +3052,7 @@
       }
     },
     {
-      "id": 19,
+      "id": 25,
       "type": "table",
       "title": "TOP 10 vulnerabilities · nucleus",
       "description": "Worst findings across this pipeline's images, ranked by severity then CVSS. 'Package' says what it pertains to; 'Images' is how many images carry it.",
@@ -1884,7 +3062,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 38,
+        "y": 81,
         "w": 8,
         "h": 10
       },
@@ -2016,7 +3194,7 @@
       }
     },
     {
-      "id": 20,
+      "id": 26,
       "type": "table",
       "title": "JOB FRESHNESS · when did each job last run?",
       "description": "Last run / last success are 'how long ago'. 'Due every' is how often the job should run (on demand = no schedule). 'Overdue by' stays 0 until a scheduled job misses its slot.",
@@ -2026,7 +3204,7 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 38,
+        "y": 81,
         "w": 8,
         "h": 10
       },
@@ -2176,6 +3354,626 @@
                     }
                   ]
                 }
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      }
+    },
+    {
+      "id": 27,
+      "type": "table",
+      "title": "UPSTREAM · project releases vs what we build (daily check)",
+      "description": "check_upstream_releases.sh asks each project (GitHub / PostgreSQL tags) for its newest stable release and compares it with what we have staged or build. 'review' means a new MAJOR or MINOR release exists, which usually needs a Dockerfile / dependency look rather than just a rebuild. 'Pre-release' is shown only for Guacamole and guacd, to give early notice of a 1.7 / 2.0 candidate. nginx and openssl are in the Trixie panel.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 14,
+        "w": 24,
+        "h": 7
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "upstream_release",
+          "instant": true,
+          "range": false,
+          "legendFormat": "",
+          "refId": "A",
+          "format": "table"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "upstream_release_check_timestamp_seconds * 1000",
+          "instant": true,
+          "range": false,
+          "legendFormat": "",
+          "refId": "B",
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "job": true,
+              "instance": true,
+              "host": true
+            },
+            "renameByName": {
+              "component": "Component",
+              "ours": "We build",
+              "stable": "Newest stable",
+              "prerelease": "Pre-release",
+              "Value #A": "Status",
+              "Value #B": "Checked"
+            },
+            "indexByName": {
+              "component": 0,
+              "ours": 1,
+              "stable": 2,
+              "prerelease": 3,
+              "Value #A": 4,
+              "Value #B": 5
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "no check yet"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Status"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "1": {
+                        "text": "current",
+                        "color": "#0ca30c",
+                        "index": 0
+                      },
+                      "0": {
+                        "text": "newer patch",
+                        "color": "#fab219",
+                        "index": 1
+                      },
+                      "2": {
+                        "text": "review: new major/minor",
+                        "color": "#ec835a",
+                        "index": 2
+                      },
+                      "-1": {
+                        "text": "unknown",
+                        "color": "#8b8b85",
+                        "index": 3
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Pre-release"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "-": {
+                        "text": "",
+                        "index": 0
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#ec835a"
+                }
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Checked"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeFromNow"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      }
+    },
+    {
+      "id": 28,
+      "type": "table",
+      "title": "CURRENT QUARTER · stack builds",
+      "description": "Result of this quarter's Grafana and Guacamole stack builds, read from each stack's signed build log (files/<stack>/<quarter>/provenance/build.log) by emit_quarter_info.sh. The quarter is the one the fiscal calendar (calendar.env) says it is now. 'Ignored' = tasks whose errors the playbook deliberately ignores (for example signing): a build can be OK with some ignored errors.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 26,
+        "w": 24,
+        "h": 5
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "quarter_stack_build and on(quarter) quarter_current",
+          "instant": true,
+          "range": false,
+          "legendFormat": "",
+          "refId": "A",
+          "format": "table"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "quarter_stack_build_timestamp_seconds * 1000 and on(quarter) quarter_current",
+          "instant": true,
+          "range": false,
+          "legendFormat": "",
+          "refId": "B",
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "job": true,
+              "instance": true,
+              "host": true
+            },
+            "renameByName": {
+              "stack": "Stack",
+              "quarter": "Quarter",
+              "started": "Started",
+              "finished": "Finished",
+              "duration": "Took",
+              "ignored": "Ignored errors",
+              "Value #A": "Result",
+              "Value #B": "Log written"
+            },
+            "indexByName": {
+              "stack": 0,
+              "quarter": 1,
+              "Value #A": 2,
+              "started": 3,
+              "finished": 4,
+              "duration": 5,
+              "ignored": 6,
+              "Value #B": 7
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "no quarter build info yet"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Result"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "1": {
+                        "text": "built OK",
+                        "color": "#0ca30c",
+                        "index": 0
+                      },
+                      "0": {
+                        "text": "FAILED",
+                        "color": "#d03b3b",
+                        "index": 1
+                      },
+                      "3": {
+                        "text": "not built yet",
+                        "color": "#8b8b85",
+                        "index": 2
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Stack"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "grafana": {
+                        "text": "Grafana stack",
+                        "index": 0
+                      },
+                      "guac": {
+                        "text": "Guacamole stack",
+                        "index": 1
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Log written"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "time:DD MMM YYYY"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "text": "",
+                        "index": 0
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      }
+    },
+    {
+      "id": 29,
+      "type": "table",
+      "title": "CURRENT QUARTER · GRAFANA STACK · locked versions vs built",
+      "description": "Locked = the version in this quarter's versions.env. Built = the version of the image actually built this quarter (ccop and nucleus separately). Green: built = locked | amber: built differs from the lock | grey: not built yet, or bundled inside another image (Tomcat, JDK).",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 31,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "(label_replace(label_replace((quarter_locked_version{stack=\"grafana\",component!~\"tomcat|jdk\"} and on(quarter) quarter_current) * on(stack, quarter, component, version) group_left() ((release_build_info{stack=\"grafana\",class=\"ccop\",version!=\"-\"} and on(quarter) quarter_current) * 0 + 1), \"built\", \"$1\", \"version\", \"(.*)\"), \"class\", \"ccop\", \"\", \"\")) or (label_replace(((quarter_locked_version{stack=\"grafana\",component!~\"tomcat|jdk\"} and on(quarter) quarter_current) unless on(stack, quarter, component, version) (release_build_info{stack=\"grafana\",class=\"ccop\",version!=\"-\"} and on(quarter) quarter_current)) * on(stack, quarter, component) group_left(built) (label_replace((release_build_info{stack=\"grafana\",class=\"ccop\",version!=\"-\"} and on(quarter) quarter_current), \"built\", \"$1\", \"version\", \"(.*)\") * 0 + 2), \"class\", \"ccop\", \"\", \"\")) or (label_replace(((quarter_locked_version{stack=\"grafana\",component!~\"tomcat|jdk\"} and on(quarter) quarter_current) unless on(stack, quarter, component) (release_build_info{stack=\"grafana\",class=\"ccop\",version!=\"-\"} and on(quarter) quarter_current)) * 3, \"class\", \"ccop\", \"\", \"\")) or (label_replace(label_replace((quarter_locked_version{stack=\"grafana\",component!~\"tomcat|jdk\"} and on(quarter) quarter_current) * on(stack, quarter, component, version) group_left() ((release_build_info{stack=\"grafana\",class=\"nucleus\",version!=\"-\"} and on(quarter) quarter_current) * 0 + 1), \"built\", \"$1\", \"version\", \"(.*)\"), \"class\", \"nucleus\", \"\", \"\")) or (label_replace(((quarter_locked_version{stack=\"grafana\",component!~\"tomcat|jdk\"} and on(quarter) quarter_current) unless on(stack, quarter, component, version) (release_build_info{stack=\"grafana\",class=\"nucleus\",version!=\"-\"} and on(quarter) quarter_current)) * on(stack, quarter, component) group_left(built) (label_replace((release_build_info{stack=\"grafana\",class=\"nucleus\",version!=\"-\"} and on(quarter) quarter_current), \"built\", \"$1\", \"version\", \"(.*)\") * 0 + 2), \"class\", \"nucleus\", \"\", \"\")) or (label_replace(((quarter_locked_version{stack=\"grafana\",component!~\"tomcat|jdk\"} and on(quarter) quarter_current) unless on(stack, quarter, component) (release_build_info{stack=\"grafana\",class=\"nucleus\",version!=\"-\"} and on(quarter) quarter_current)) * 3, \"class\", \"nucleus\", \"\", \"\")) or (label_replace((quarter_locked_version{stack=\"grafana\",component=~\"tomcat|jdk\"} and on(quarter) quarter_current) * 4, \"class\", \"bundled\", \"\", \"\"))",
+          "instant": true,
+          "range": false,
+          "legendFormat": "",
+          "refId": "A",
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "job": true,
+              "instance": true,
+              "host": true,
+              "stack": true,
+              "quarter": true,
+              "image": true
+            },
+            "renameByName": {
+              "component": "Component",
+              "class": "Image",
+              "version": "Locked (versions.env)",
+              "built": "Built",
+              "Value": "Status"
+            },
+            "indexByName": {
+              "component": 0,
+              "class": 1,
+              "version": 2,
+              "built": 3,
+              "Value": 4
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "Component"
+              },
+              {
+                "field": "Image"
+              }
+            ]
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "no versions.env found for this quarter yet"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Status"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "1": {
+                        "text": "built = locked",
+                        "color": "#0ca30c",
+                        "index": 0
+                      },
+                      "2": {
+                        "text": "built differs from lock",
+                        "color": "#fab219",
+                        "index": 1
+                      },
+                      "3": {
+                        "text": "not built yet",
+                        "color": "#8b8b85",
+                        "index": 2
+                      },
+                      "4": {
+                        "text": "bundled in image",
+                        "color": "#8b8b85",
+                        "index": 3
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      }
+    },
+    {
+      "id": 30,
+      "type": "table",
+      "title": "CURRENT QUARTER · GUACAMOLE STACK · locked versions vs built",
+      "description": "Locked = the version in this quarter's versions.env. Built = the version of the image actually built this quarter (ccop and nucleus separately). Green: built = locked | amber: built differs from the lock | grey: not built yet, or bundled inside another image (Tomcat, JDK).",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 31,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "(label_replace(label_replace((quarter_locked_version{stack=\"guac\",component!~\"tomcat|jdk\"} and on(quarter) quarter_current) * on(stack, quarter, component, version) group_left() ((release_build_info{stack=\"guac\",class=\"ccop\",version!=\"-\"} and on(quarter) quarter_current) * 0 + 1), \"built\", \"$1\", \"version\", \"(.*)\"), \"class\", \"ccop\", \"\", \"\")) or (label_replace(((quarter_locked_version{stack=\"guac\",component!~\"tomcat|jdk\"} and on(quarter) quarter_current) unless on(stack, quarter, component, version) (release_build_info{stack=\"guac\",class=\"ccop\",version!=\"-\"} and on(quarter) quarter_current)) * on(stack, quarter, component) group_left(built) (label_replace((release_build_info{stack=\"guac\",class=\"ccop\",version!=\"-\"} and on(quarter) quarter_current), \"built\", \"$1\", \"version\", \"(.*)\") * 0 + 2), \"class\", \"ccop\", \"\", \"\")) or (label_replace(((quarter_locked_version{stack=\"guac\",component!~\"tomcat|jdk\"} and on(quarter) quarter_current) unless on(stack, quarter, component) (release_build_info{stack=\"guac\",class=\"ccop\",version!=\"-\"} and on(quarter) quarter_current)) * 3, \"class\", \"ccop\", \"\", \"\")) or (label_replace(label_replace((quarter_locked_version{stack=\"guac\",component!~\"tomcat|jdk\"} and on(quarter) quarter_current) * on(stack, quarter, component, version) group_left() ((release_build_info{stack=\"guac\",class=\"nucleus\",version!=\"-\"} and on(quarter) quarter_current) * 0 + 1), \"built\", \"$1\", \"version\", \"(.*)\"), \"class\", \"nucleus\", \"\", \"\")) or (label_replace(((quarter_locked_version{stack=\"guac\",component!~\"tomcat|jdk\"} and on(quarter) quarter_current) unless on(stack, quarter, component, version) (release_build_info{stack=\"guac\",class=\"nucleus\",version!=\"-\"} and on(quarter) quarter_current)) * on(stack, quarter, component) group_left(built) (label_replace((release_build_info{stack=\"guac\",class=\"nucleus\",version!=\"-\"} and on(quarter) quarter_current), \"built\", \"$1\", \"version\", \"(.*)\") * 0 + 2), \"class\", \"nucleus\", \"\", \"\")) or (label_replace(((quarter_locked_version{stack=\"guac\",component!~\"tomcat|jdk\"} and on(quarter) quarter_current) unless on(stack, quarter, component) (release_build_info{stack=\"guac\",class=\"nucleus\",version!=\"-\"} and on(quarter) quarter_current)) * 3, \"class\", \"nucleus\", \"\", \"\")) or (label_replace((quarter_locked_version{stack=\"guac\",component=~\"tomcat|jdk\"} and on(quarter) quarter_current) * 4, \"class\", \"bundled\", \"\", \"\"))",
+          "instant": true,
+          "range": false,
+          "legendFormat": "",
+          "refId": "A",
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "job": true,
+              "instance": true,
+              "host": true,
+              "stack": true,
+              "quarter": true,
+              "image": true
+            },
+            "renameByName": {
+              "component": "Component",
+              "class": "Image",
+              "version": "Locked (versions.env)",
+              "built": "Built",
+              "Value": "Status"
+            },
+            "indexByName": {
+              "component": 0,
+              "class": 1,
+              "version": 2,
+              "built": 3,
+              "Value": 4
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "Component"
+              },
+              {
+                "field": "Image"
+              }
+            ]
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "no versions.env found for this quarter yet"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Status"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "1": {
+                        "text": "built = locked",
+                        "color": "#0ca30c",
+                        "index": 0
+                      },
+                      "2": {
+                        "text": "built differs from lock",
+                        "color": "#fab219",
+                        "index": 1
+                      },
+                      "3": {
+                        "text": "not built yet",
+                        "color": "#8b8b85",
+                        "index": 2
+                      },
+                      "4": {
+                        "text": "bundled in image",
+                        "color": "#8b8b85",
+                        "index": 3
+                      }
+                    }
+                  }
+                ]
               },
               {
                 "id": "custom.cellOptions",

@@ -1,0 +1,491 @@
+[ansible@ansible-forge ~]$ /opt/ansible/nucleus/playbooks/play_weekly_builds.sh grafana postgres idrac
+=== Weekly builds started at 2026-10-19-11:34:47 ===
+[WARNING]: Skipping callback plugin 'stig_xml', unable to load
+
+PLAY [localhost] ***************************************************************
+
+TASK [Gathering Facts] *********************************************************
+[WARNING]: Timeout exceeded when getting mount info for /nfs
+ok: [localhost]
+
+TASK [Weekly build: grafana] ***************************************************
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - reset state] *********
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - work out the quarter and week] ***
+included: /opt/ansible/nucleus/roles/weekly_common/tasks/context.yml for localhost
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - read current quarter] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - determine week] ******
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - set paths] ***********
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - set derived paths] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - set working directories] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - create directories] ***
+included: /opt/ansible/nucleus/roles/weekly_common/tasks/directories.yml for localhost
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - create build and results directories] ***
+changed: [localhost] => (item=/opt/ansible/build/grafana_stack/grafana/weekly/fy27q1/43)
+changed: [localhost] => (item=/opt/ansible/files/grafana/weekly/43)
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - check the quarter build directory exists] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - quarter build directory missing] ***
+skipping: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - detect version] ******
+included: /opt/ansible/nucleus/roles/weekly_common/tasks/detect_version.yml for localhost
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - detect version from staged content] ***
+included: /opt/ansible/nucleus/roles/weekly_common/tasks/detect_staged.yml for localhost
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - find the highest staged version directory] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - check it has staged content] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - use the staged version] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - detect version from GitHub tags] ***
+skipping: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - use newest GitHub tag] ***
+skipping: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - detect nginx version from nginx.org] ***
+skipping: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - use newest nginx release] ***
+skipping: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - version found] *******
+ok: [localhost] => {
+    "msg": "grafana: version 12.4.13"
+}
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - nothing staged yet, skip] ***
+skipping: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - prepare working copy] ***
+included: /opt/ansible/nucleus/roles/weekly_common/tasks/prepare.yml for localhost
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - pick staged source] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - copy the quarter build directory] ***
+changed: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - build images] ********
+included: /opt/ansible/nucleus/roles/weekly_common/tasks/build.yml for localhost
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - build arguments are defined] ***
+skipping: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - docker build images] ***
+changed: [localhost] => (item={'flavor': 'functional', 'cls': 'ccop'})
+changed: [localhost] => (item={'flavor': 'hardened', 'cls': 'nucleus'})
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - scan images] *********
+included: /opt/ansible/nucleus/roles/weekly_common/tasks/scan.yml for localhost
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - scan one image at a time] ***
+included: /opt/ansible/nucleus/roles/weekly_common/tasks/scan_image.yml for localhost => (item={'flavor': 'functional', 'cls': 'ccop'})
+included: /opt/ansible/nucleus/roles/weekly_common/tasks/scan_image.yml for localhost => (item={'flavor': 'hardened', 'cls': 'nucleus'})
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly scan ccop - set names] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly scan ccop - set variables] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly scan ccop - create output directory] ***
+changed: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly scan ccop - SBOM and vulnerability scan] ***
+changed: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly scan ccop - compensating controls and OpenSCAP (best effort)] ***
+changed: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly scan ccop - publish metrics (best effort)] ***
+changed: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly scan nucleus - set names] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly scan nucleus - set variables] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly scan nucleus - create output directory] ***
+changed: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly scan nucleus - SBOM and vulnerability scan] ***
+changed: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly scan nucleus - compensating controls and OpenSCAP (best effort)] ***
+changed: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly scan nucleus - publish metrics (best effort)] ***
+changed: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - mark success] ********
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - finish (result, cleanup, status)] ***
+included: /opt/ansible/nucleus/roles/weekly_common/tasks/finish.yml for localhost
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - make sure the working directory exists] ***
+changed: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - write result.env] ****
+changed: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - remove the probe images] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - prune old weeks (build and results trees)] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - work out the status of each image class] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - write the dashboard record for this week] ***
+changed: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - keep only the newest weeks of dashboard records] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - report to the dashboard] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - add to the run summary] ***
+ok: [localhost]
+
+TASK [Weekly build: prometheus] ************************************************
+skipping: [localhost]
+
+TASK [Weekly build: idrac] *****************************************************
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - reset state] *********
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - work out the quarter and week] ***
+included: /opt/ansible/nucleus/roles/weekly_common/tasks/context.yml for localhost
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - read current quarter] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - determine week] ******
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - set paths] ***********
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - set derived paths] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - set working directories] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - create directories] ***
+included: /opt/ansible/nucleus/roles/weekly_common/tasks/directories.yml for localhost
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - create build and results directories] ***
+changed: [localhost] => (item=/opt/ansible/build/grafana_stack/idrac/weekly/fy27q1/43)
+ok: [localhost] => (item=/opt/ansible/files/grafana/weekly/43)
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - check the quarter build directory exists] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - quarter build directory missing] ***
+skipping: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - detect version] ******
+included: /opt/ansible/nucleus/roles/weekly_common/tasks/detect_version.yml for localhost
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - detect version from staged content] ***
+included: /opt/ansible/nucleus/roles/weekly_common/tasks/detect_staged.yml for localhost
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - find the highest staged version directory] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - check it has staged content] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - use the staged version] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - detect version from GitHub tags] ***
+skipping: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - use newest GitHub tag] ***
+skipping: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - detect nginx version from nginx.org] ***
+skipping: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - use newest nginx release] ***
+skipping: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - version found] *******
+ok: [localhost] => {
+    "msg": "idrac: version 2.6.3"
+}
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - nothing staged yet, skip] ***
+skipping: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - prepare working copy] ***
+included: /opt/ansible/nucleus/roles/weekly_common/tasks/prepare.yml for localhost
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - pick staged source] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - copy the quarter build directory] ***
+fatal: [localhost]: FAILED! => {"changed": true, "cmd": "set -euo pipefail\nfind \"/opt/ansible/build/grafana_stack/idrac/weekly/fy27q1/43\" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +\ntar -C \"/opt/ansible/build/grafana_stack/idrac/fy27q1\" --exclude='ccop-*.tar.gz' --exclude='nucleus-*.tar.gz' --exclude='./VERSION.*' --exclude='./staged'    --exclude='./result.env' -cf - . | tar -C \"/opt/ansible/build/grafana_stack/idrac/weekly/fy27q1/43\" -xf -\nif [ -n \"/opt/ansible/staged/idrac/2.6.3/staged\" ] && [ -d \"/opt/ansible/staged/idrac/2.6.3/staged\" ]; then\n  mkdir -p \"/opt/ansible/build/grafana_stack/idrac/weekly/fy27q1/43/staged\"\n  tar -C \"/opt/ansible/staged/idrac/2.6.3/staged\" -cf - . | tar -C \"/opt/ansible/build/grafana_stack/idrac/weekly/fy27q1/43/staged\" -xf -\nfi\n", "delta": "0:00:00.086246", "end": "2026-10-19 12:04:12.908892", "msg": "non-zero return code", "rc": 2, "start": "2026-10-19 12:04:12.822646", "stderr": "tar: ./inventory.env: Cannot open: Permission denied\ntar: Exiting with failure status due to previous errors", "stderr_lines": ["tar: ./inventory.env: Cannot open: Permission denied", "tar: Exiting with failure status due to previous errors"], "stdout": "", "stdout_lines": []}
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - record failure] ******
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - show failure] ********
+ok: [localhost] => {
+    "msg": "idrac failed at 'Weekly - copy the quarter build directory': non-zero return code"
+}
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - finish (result, cleanup, status)] ***
+included: /opt/ansible/nucleus/roles/weekly_common/tasks/finish.yml for localhost
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - make sure the working directory exists] ***
+changed: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - write result.env] ****
+changed: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - remove the probe images] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - prune old weeks (build and results trees)] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - work out the status of each image class] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - write the dashboard record for this week] ***
+changed: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - keep only the newest weeks of dashboard records] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - report to the dashboard] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - add to the run summary] ***
+ok: [localhost]
+
+TASK [Weekly build: nginx_grafana] *********************************************
+skipping: [localhost]
+
+TASK [Weekly build: guacamole] *************************************************
+skipping: [localhost]
+
+TASK [Weekly build: guacd] *****************************************************
+skipping: [localhost]
+
+TASK [Weekly build: postgres] **************************************************
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - reset state] *********
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - work out the quarter and week] ***
+included: /opt/ansible/nucleus/roles/weekly_common/tasks/context.yml for localhost
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - read current quarter] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - determine week] ******
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - set paths] ***********
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - set derived paths] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - set working directories] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - create directories] ***
+included: /opt/ansible/nucleus/roles/weekly_common/tasks/directories.yml for localhost
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - create build and results directories] ***
+changed: [localhost] => (item=/opt/ansible/build/postgres/weekly/fy27q1/43)
+changed: [localhost] => (item=/opt/ansible/files/avocado/weekly/43)
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - check the quarter build directory exists] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - quarter build directory missing] ***
+skipping: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - detect version] ******
+included: /opt/ansible/nucleus/roles/weekly_common/tasks/detect_version.yml for localhost
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - detect version from staged content] ***
+included: /opt/ansible/nucleus/roles/weekly_common/tasks/detect_staged.yml for localhost
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - find the highest staged version directory] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - check it has staged content] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - use the staged version] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - detect version from GitHub tags] ***
+skipping: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - use newest GitHub tag] ***
+skipping: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - detect nginx version from nginx.org] ***
+skipping: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - use newest nginx release] ***
+skipping: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - version found] *******
+ok: [localhost] => {
+    "msg": "postgres: version 18.6"
+}
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - nothing staged yet, skip] ***
+skipping: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - prepare working copy] ***
+included: /opt/ansible/nucleus/roles/weekly_common/tasks/prepare.yml for localhost
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - pick staged source] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - copy the quarter build directory] ***
+changed: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - build images] ********
+included: /opt/ansible/nucleus/roles/weekly_common/tasks/build.yml for localhost
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - build arguments are defined] ***
+skipping: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - docker build images] ***
+changed: [localhost] => (item={'flavor': 'functional', 'cls': 'ccop'})
+changed: [localhost] => (item={'flavor': 'hardened', 'cls': 'nucleus'})
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - scan images] *********
+included: /opt/ansible/nucleus/roles/weekly_common/tasks/scan.yml for localhost
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - scan one image at a time] ***
+included: /opt/ansible/nucleus/roles/weekly_common/tasks/scan_image.yml for localhost => (item={'flavor': 'functional', 'cls': 'ccop'})
+included: /opt/ansible/nucleus/roles/weekly_common/tasks/scan_image.yml for localhost => (item={'flavor': 'hardened', 'cls': 'nucleus'})
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly scan ccop - set names] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly scan ccop - set variables] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly scan ccop - create output directory] ***
+changed: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly scan ccop - SBOM and vulnerability scan] ***
+changed: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly scan ccop - compensating controls and OpenSCAP (best effort)] ***
+changed: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly scan ccop - publish metrics (best effort)] ***
+changed: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly scan nucleus - set names] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly scan nucleus - set variables] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly scan nucleus - create output directory] ***
+changed: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly scan nucleus - SBOM and vulnerability scan] ***
+changed: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly scan nucleus - compensating controls and OpenSCAP (best effort)] ***
+changed: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly scan nucleus - publish metrics (best effort)] ***
+changed: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - mark success] ********
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - finish (result, cleanup, status)] ***
+included: /opt/ansible/nucleus/roles/weekly_common/tasks/finish.yml for localhost
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - make sure the working directory exists] ***
+changed: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - write result.env] ****
+changed: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - remove the probe images] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - prune old weeks (build and results trees)] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - work out the status of each image class] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - write the dashboard record for this week] ***
+changed: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - keep only the newest weeks of dashboard records] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - report to the dashboard] ***
+ok: [localhost]
+
+TASK [/opt/ansible/nucleus/roles/weekly_common : Weekly - add to the run summary] ***
+ok: [localhost]
+
+TASK [Weekly build: nginx_guac] ************************************************
+skipping: [localhost]
+
+TASK [Weekly - summary] ********************************************************
+ok: [localhost] => {
+    "weekly_results": {
+        "grafana": "ok       12.4.13",
+        "idrac": "FAILED   2.6.3 at Weekly - copy the quarter build directory",
+        "postgres": "ok       18.6"
+    }
+}
+
+TASK [Weekly - fail if anything needs attention] *******************************
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "['idrac'] need attention"}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=126  changed=32   unreachable=0    failed=1    skipped=25   rescued=1    ignored=0
+
+=== Weekly builds finished at 2026-10-19-12:23:30 after 2923s (exit 2) ===

@@ -9,6 +9,7 @@
 #   WEEKLY_JOBS=1 play_weekly_builds.sh        one component at a time (the old behaviour)
 # Cron (after the Wednesday staging):  0 2 * * 4  /opt/ansible/nucleus/playbooks/play_weekly_builds.sh
 set -uo pipefail
+export TMPDIR="${WEEKLY_TMPDIR:-/opt/ansible/molecule/scans/tmp}"; mkdir -p "$TMPDIR"   # never the 4 GB /tmp
 SECONDS=0
 export PLAYBOOK_DIR="${PLAYBOOK_DIR:-/opt/ansible/nucleus/playbooks}"
 export INVENTORY="${INVENTORY:-/home/ansible/inventory.ini}"

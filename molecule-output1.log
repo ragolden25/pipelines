@@ -43,4 +43,16 @@ main.yml
 /opt/ansible/nucleus/roles/weekly_build_nginx_grafana/tasks:
 main.yml
 
+[root@ansible-forge bin]# python3 --version; ansible --version | head -1; docker --version; podman --version; df -h /opt/ansible/molecule
+Python 3.9.25
+ansible [core 2.15.13]
+Docker version 29.9.0, build f415da8
+-bash: podman: command not found
+Filesystem                 Size  Used Avail Use% Mounted on
+/dev/mapper/vg02-molecule  1.0T   50G  975G   5% /opt/ansible/molecule
+
+
+[root@ansible-forge bin]# id; docker ps >/dev/null && echo docker-ok
+uid=0(root) gid=0(root) groups=0(root) context=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023
+docker-ok
 

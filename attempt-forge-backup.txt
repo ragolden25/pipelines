@@ -84,3 +84,10 @@ Domain: 'ansible-forge'
 
 
 journalctl --list-boots | tail -3; journalctl -b -1 --no-pager | grep -i -E 'out of memory|oom-kill|hung task|blocked for more than|I/O error|soft lockup' | tail -15
+
+
+[root@ansible-forge bin]# journalctl --list-boots | tail -3; journalctl -b -1 --no-pager | grep -i -E 'out of memory|oom-kill|hung task|blocked for more than|I/O error|soft lockup' | tail -15
+IDX BOOT ID                          FIRST ENTRY                 LAST ENTRY
+  0 94d2cae8a2c34922bd143808a9310dd4 Thu 2026-10-22 09:58:30 EDT Thu 2026-10-22 13:08:16 EDT
+Specifying boot ID or boot offset has no effect, no persistent journal was found.
+

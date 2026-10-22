@@ -16,3 +16,8 @@ python3 --version; ansible --version | head -1; docker --version; podman --versi
 
 
 id; docker ps >/dev/null && echo docker-ok
+
+
+
+
+tail -25 /root/fb-full.log; virsh domjobinfo ansible-forge; virsh checkpoint-list ansible-forge --name; du -sh /var/lib/libvirt/images/ansible-forge-backup/*

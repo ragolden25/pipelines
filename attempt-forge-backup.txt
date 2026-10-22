@@ -105,3 +105,20 @@ ls: cannot access '/var/log/sa': No such file or directory
 -rw-r-----. 1 root root   3713827 Oct  3 23:12 /var/log/messages-20261004
 -rw-r-----. 1 root root 116486371 Oct 11 00:00 /var/log/messages-20261011
 -rw-r-----. 1 root root 243741349 Oct 18 00:00 /var/log/messages-20261018
+
+
+
+Priorities, in order:
+
+Start the backup. This is two commands on kvm26 and takes about two minutes of your attention. First the fix:
+sed -i "s/{print \$4; exit}')/{print \$4}' | head -n1 || true)/" /root/bin/forge-backup-full.sh
+
+Then start it in the background:
+
+cd /root/bin && QUIESCE=0 nohup bash -x ./forge-backup-full.sh > /root/fb-full.log 2>&1 &
+sleep 30; tail -5 /root/fb-full.log
+
+Once you see Starting the backup, you’re done with it. It runs for hours without you.
+
+Molecule. Run the /tmp/cgs.txt command from earlier on ansible-forge and send me the file. Everything else for the Grafana 12 scenario waits on it, and I can build the scenario while you do other work.
+Later, if the hang happens again: the two log commands and the persistent journal fix are for that. A repeat will have evidence, and today’s missing logs aren’t worth more of your time.

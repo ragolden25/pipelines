@@ -25,3 +25,22 @@ Traceback (most recent call last):
   File "/opt/ansible/molecule/venv/lib64/python3.11/site-packages/selinux/__init__.py", line 102, in check_system_sitepackages
     raise Exception(
 Exception: Failed to detect selinux python bindings at ['/usr/local/lib64/python3.11/site-packages', '/usr/local/lib/python3.11/site-packages', '/usr/lib64/python3.11/site-packages', '/usr/lib/python3.11/site-packages']
+
+
+
+
+The install worked. Only the final ansible --version check failed, and Molecule itself printed its version fine. The cause is a small pip package called selinux that got installed. It checks for system SELinux bindings, and RHEL has none for Python 3.11. Removing that one package fixes it, and I confirmed that in a clean copy of the same setup: molecule and ansible both ran afterward.
+
+Run this as root on ansible-forge:
+
+/opt/ansible/molecule/venv/bin/pip uninstall -y selinux && /opt/ansible/molecule/venv/bin/ansible --version | head -1
+
+It should print ansible [core 2.15.13].
+
+I’ll add that uninstall line to install-molecule.sh as well, in case you ever rebuild the virtualenv.
+
+Then, as the ansible user, check Docker access. The group change only applies after a fresh login:
+
+su - ansible -c 'source /opt/ansible/molecule/venv/bin/activate && molecule --version | head -1 && docker ps >/dev/null && echo docker-ok'
+
+Send me the output. If it prints docker-ok, I’ll write the first Grafana 12 scenario around configure_grafana_stack. If you’d like me to start on that now, say so and I’ll begin with the scenario layout.

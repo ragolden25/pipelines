@@ -44,3 +44,15 @@ Then, as the ansible user, check Docker access. The group change only applies af
 su - ansible -c 'source /opt/ansible/molecule/venv/bin/activate && molecule --version | head -1 && docker ps >/dev/null && echo docker-ok'
 
 Send me the output. If it prints docker-ok, I’ll write the first Grafana 12 scenario around configure_grafana_stack. If you’d like me to start on that now, say so and I’ll begin with the scenario layout.
+
+
+
+[root@ansible-forge bin]# /opt/ansible/molecule/venv/bin/pip uninstall -y selinux && /opt/ansible/molecule/venv/bin/ansible --version | head -1
+Found existing installation: selinux 0.3.0
+Uninstalling selinux-0.3.0:
+  Successfully uninstalled selinux-0.3.0
+ansible [core 2.15.13]
+[root@ansible-forge bin]# su - ansible -c 'source /opt/ansible/molecule/venv/bin/activate && molecule --version | head -1 && docker ps >/dev/null && echo docker-ok'
+molecule 25.1.0 using python 3.11
+docker-ok
+

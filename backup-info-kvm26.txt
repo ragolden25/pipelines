@@ -1,0 +1,31 @@
+[root@kvm26 bin]# ./forge-backup-full.sh --dry-run
+Disks of ansible-forge:
+  vda  /var/lib/libvirt/images/ansible-flat.qcow2       191 GB on the host
+  vdb  ansible-data                                     523 GB on the host
+  vdc  ansible-molecule                                  49 GB on the host
+  vdd  ansible-build                                     75 GB on the host
+  vde  ansible-shipping                                  51 GB on the host
+  vdf  ansible-staged                                    27 GB on the host
+Needed about 918 GB, free 4110 GB in /var/lib/libvirt/images/ansible-forge-backup
+
+---- backup.xml
+<domainbackup mode='push'>
+  <disks>
+    <disk name='vda' backup='yes' type='file'><target file='/var/lib/libvirt/images/ansible-forge-backup/20261022-1054-full/ansible-flat.qcow2'/><driver type='qcow2'/></disk>
+    <disk name='vdb' backup='yes' type='file'><target file='/var/lib/libvirt/images/ansible-forge-backup/20261022-1054-full/ansible-data.qcow2'/><driver type='qcow2'/></disk>
+    <disk name='vdc' backup='yes' type='file'><target file='/var/lib/libvirt/images/ansible-forge-backup/20261022-1054-full/ansible-molecule.qcow2'/><driver type='qcow2'/></disk>
+    <disk name='vdd' backup='yes' type='file'><target file='/var/lib/libvirt/images/ansible-forge-backup/20261022-1054-full/ansible-build.qcow2'/><driver type='qcow2'/></disk>
+    <disk name='vde' backup='yes' type='file'><target file='/var/lib/libvirt/images/ansible-forge-backup/20261022-1054-full/ansible-shipping.qcow2'/><driver type='qcow2'/></disk>
+    <disk name='vdf' backup='yes' type='file'><target file='/var/lib/libvirt/images/ansible-forge-backup/20261022-1054-full/ansible-staged.qcow2'/><driver type='qcow2'/></disk>
+  </disks>
+</domainbackup>
+---- checkpoint.xml
+<domaincheckpoint><name>ckpt-20261022-1054</name><description>first full backup 20261022-1054</description><disks>
+  <disk name='vda' checkpoint='bitmap'/>
+  <disk name='vdb' checkpoint='bitmap'/>
+  <disk name='vdc' checkpoint='bitmap'/>
+  <disk name='vdd' checkpoint='bitmap'/>
+  <disk name='vde' checkpoint='bitmap'/>
+  <disk name='vdf' checkpoint='bitmap'/>
+</disks></domaincheckpoint>
+---- would run: virsh backup-begin ansible-forge backup.xml checkpoint.xml --quiesce

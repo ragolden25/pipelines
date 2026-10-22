@@ -80,3 +80,7 @@ Domain: 'ansible-forge'
   balloon.hugetlb_pgalloc=0
   balloon.hugetlb_pgfail=0
   balloon.rss=66719456
+
+
+
+journalctl --list-boots | tail -3; journalctl -b -1 --no-pager | grep -i -E 'out of memory|oom-kill|hung task|blocked for more than|I/O error|soft lockup' | tail -15

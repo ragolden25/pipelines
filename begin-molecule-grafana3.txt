@@ -1,1 +1,6 @@
 find /opt/ansible/files/grafana -path '*weekly*' -name '*.gz' | sort | tail -12; for f in $(find /opt/ansible/files/grafana -path '*weekly*' -name '*.gz' | sort | tail -1); do zcat $f | tar -xOf - manifest.json 2>/dev/null | head -c 400; done
+
+
+
+
+cd /opt/ansible/nucleus/roles && { for f in weekly_common/tasks/build_image.yml weekly_common/tasks/finish.yml weekly_common/defaults/main.yml build_grafana_stack/tasks/save_functional.yml; do echo "== $f"; cat $f; done; } > /tmp/save-ref.txt 2>&1; wc -l /tmp/save-ref.txt

@@ -46,3 +46,9 @@ Then you must tell SELinux about this by enabling the 'domain_kernel_load_module
 Do
 setsebool -P domain_kernel_load_modules 1
 
+
+
+virsh domstate ansible-forge --reason
+virsh qemu-agent-command ansible-forge '{"execute":"guest-ping"}'
+virsh domstats ansible-forge --cpu-total --balloon
+

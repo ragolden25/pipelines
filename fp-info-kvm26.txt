@@ -1,0 +1,43 @@
+=== HOST kvm26 ===
+--- mem/cpu
+               total        used        free      shared  buff/cache   available
+Mem:             376         203           1           0         174         173
+48
+--- network
+eno1             UP
+eno2             UP
+eno3             DOWN
+eno4             DOWN
+ens1f0           DOWN
+ens1f1           DOWN
+oob              UP             192.168.110.216/24
+prod             UP             10.102.42.216/24
+virbr0           DOWN           192.168.122.1/24
+ Name      State    Autostart   Persistent
+--------------------------------------------
+ default   active   yes         yes
+
+--- domain ansible-forge
+State:          running
+CPU(s):         12
+Max memory:     67108864 KiB
+Used memory:    67108864 KiB
+    <interface type='bridge'>
+      <mac address='52:54:00:4b:46:0f'/>
+      <source bridge='oob'/>
+      <model type='virtio'/>
+    <interface type='bridge'>
+      <mac address='52:54:00:2b:f9:c9'/>
+      <source bridge='prod'/>
+      <model type='virtio'/>
+      <model type='virtio' heads='1' primary='yes'/>
+ Type     Device   Target   Source
+------------------------------------------------------------------------
+ file     disk     vda      /var/lib/libvirt/images/ansible-flat.qcow2
+ volume   disk     vdb      ansible-data
+ volume   disk     vdc      ansible-molecule
+ volume   disk     vdd      ansible-build
+ volume   disk     vde      ansible-shipping
+ volume   disk     vdf      ansible-staged
+
+Saved to /root/fp-info-kvm26.txt

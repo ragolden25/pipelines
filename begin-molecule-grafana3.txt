@@ -1,0 +1,1 @@
+find /opt/ansible/files/grafana -path '*weekly*' -name '*.gz' | sort | tail -12; for f in $(find /opt/ansible/files/grafana -path '*weekly*' -name '*.gz' | sort | tail -1); do zcat $f | tar -xOf - manifest.json 2>/dev/null | head -c 400; done

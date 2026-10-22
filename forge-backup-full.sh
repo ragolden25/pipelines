@@ -54,7 +54,7 @@ echo "Needed about $((need / 1000000000)) GB, free $((avail / 1000000000)) GB in
 
 if [ $DRY -eq 1 ]; then
   echo; echo "---- backup.xml"; cat "$WORK/backup.xml"; echo "---- checkpoint.xml"; cat "$WORK/checkpoint.xml"
-  echo "---- would run: virsh backup-begin $DOM backup.xml checkpoint.xml$([ "$QUIESCE" = 1 ] && echo ' --quiesce')"
+  echo "---- would run: virsh backup-begin $DOM backup.xml checkpoint.xml"
   exit 0
 fi
 
@@ -65,8 +65,14 @@ mkdir -p "$DEST"; chown "$OWN" "$BASE" "$DEST"; chmod 750 "$BASE" "$DEST"
 
 # ---- go ---------------------------------------------------------------------------------------
 echo; echo "Starting the backup of $DOM at $(date +%T) into $DEST"
-virsh backup-begin "$DOM" "$WORK/backup.xml" "$WORK/checkpoint.xml" $([ "$QUIESCE" = 1 ] && echo --quiesce) \
-  || { echo "backup-begin failed. If the message mentions the guest agent or freezing, try again with QUIESCE=0"; exit 1; }
+FROZE=0
+if [ "$QUIESCE" = 1 ]; then
+  virsh domfsfreeze "$DOM" >/dev/null && FROZE=1 || { echo "guest freeze failed; retry with QUIESCE=0"; exit 1; }
+  trap 'virsh domfsthaw "$DOM" >/dev/null 2>&1' EXIT
+fi
+virsh backup-begin "$DOM" "$WORK/backup.xml" "$WORK/checkpoint.xml" \
+  || { echo "backup-begin failed"; [ $FROZE = 1 ] && virsh domfsthaw "$DOM" >/dev/null 2>&1; exit 1; }
+[ $FROZE = 1 ] && { virsh domfsthaw "$DOM" >/dev/null && echo "guest filesystems thawed"; FROZE=0; }
 
 jobtype() { virsh domjobinfo "$DOM" 2>/dev/null | awk -F: '/^Job type/ {gsub(/ /,"",$2); print $2}'; }
 while t=$(jobtype); [[ "$t" == "Unbounded" || "$t" == "Bounded" ]]; do

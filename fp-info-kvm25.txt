@@ -1,0 +1,40 @@
+=== HOST kvm25.nuc2.scires.com ===
+--- mem/cpu
+               total        used        free      shared  buff/cache   available
+Mem:             314          10         257           0          47         303
+48
+--- network
+eno1             UP
+eno2             UP
+eno3             DOWN
+eno4             DOWN
+vlan110@eno1     UP
+prod             UP             10.102.42.30/24 fe80::91f0:52ad:110:a8e8/64
+oob              UP             192.168.110.160/24 fe80::9a94:c00a:8c83:386b/64
+Tucker           UP             192.168.0.1/24 fe80::36ca:8c62:739d:2f66/64
+virbr0           DOWN           192.168.122.1/24
+ Name      State    Autostart   Persistent
+--------------------------------------------
+ default   active   yes         yes
+
+--- domain ansible
+State:          shut off
+CPU(s):         2
+Max memory:     4194304 KiB
+Used memory:    4194304 KiB
+    <interface type='bridge'>
+      <mac address='52:54:00:4b:46:0f'/>
+      <source bridge='oob'/>
+      <model type='virtio'/>
+    <interface type='bridge'>
+      <mac address='52:54:00:2b:f9:c9'/>
+      <source bridge='prod'/>
+      <model type='virtio'/>
+      <model type='virtio' heads='1' primary='yes' device='virtio-vga'/>
+ Type     Device   Target   Source
+------------------------------------------------------------------------
+ file     disk     vda      /var/lib/libvirt/images/ansible-flat.qcow2
+ volume   disk     vdb      ansible-data
+ file     cdrom    sda      -
+
+Saved to /root/fp-info-kvm25.txt

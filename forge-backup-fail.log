@@ -1,0 +1,13 @@
+[root@kvm26 bin]# ./forge-backup-full.sh
+Disks of ansible-forge:
+  vda  /var/lib/libvirt/images/ansible-flat.qcow2       191 GB on the host
+  vdb  ansible-data                                     523 GB on the host
+  vdc  ansible-molecule                                  49 GB on the host
+  vdd  ansible-build                                     75 GB on the host
+  vde  ansible-shipping                                  51 GB on the host
+  vdf  ansible-staged                                    27 GB on the host
+Needed about 919 GB, free 4110 GB in /var/lib/libvirt/images/ansible-forge-backup
+
+Starting the backup of ansible-forge at 11:34:42 into /var/lib/libvirt/images/ansible-forge-backup/20261022-1134-full
+error: command 'backup-begin' doesn't support option --quiesce
+backup-begin failed. If the message mentions the guest agent or freezing, try again with QUIESCE=0

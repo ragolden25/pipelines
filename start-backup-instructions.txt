@@ -13,3 +13,6 @@ molecule --version; ls /opt/ansible/nucleus/roles | grep -i -E 'grafana|configur
 
 
 python3 --version; ansible --version | head -1; docker --version; podman --version; df -h /opt/ansible/molecule
+
+
+id; docker ps >/dev/null && echo docker-ok

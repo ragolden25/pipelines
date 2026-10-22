@@ -52,3 +52,31 @@ virsh domstate ansible-forge --reason
 virsh qemu-agent-command ansible-forge '{"execute":"guest-ping"}'
 virsh domstats ansible-forge --cpu-total --balloon
 
+[root@kvm26 ~]# virsh domstate ansible-forge --reason
+virsh qemu-agent-command ansible-forge '{"execute":"guest-ping"}'
+virsh domstats ansible-forge --cpu-total --balloon
+running (booted)
+
+{"return":{}}
+
+Domain: 'ansible-forge'
+  cpu.time=542251894273000
+  cpu.user=456437213575000
+  cpu.system=85814680698000
+  cpu.cache.monitor.count=0
+  cpu.haltpoll.success.time=17915802924879
+  cpu.haltpoll.fail.time=8500593987524
+  balloon.current=67108864
+  balloon.maximum=67108864
+  balloon.swap_in=0
+  balloon.swap_out=0
+  balloon.major_fault=4326
+  balloon.minor_fault=1488310
+  balloon.unused=63954012
+  balloon.available=65317744
+  balloon.usable=64145616
+  balloon.last-update=1792688733
+  balloon.disk_caches=757656
+  balloon.hugetlb_pgalloc=0
+  balloon.hugetlb_pgfail=0
+  balloon.rss=66719456

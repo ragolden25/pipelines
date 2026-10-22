@@ -11,3 +11,9 @@ Needed about 919 GB, free 4110 GB in /var/lib/libvirt/images/ansible-forge-backu
 Starting the backup of ansible-forge at 11:34:42 into /var/lib/libvirt/images/ansible-forge-backup/20261022-1134-full
 error: command 'backup-begin' doesn't support option --quiesce
 backup-begin failed. If the message mentions the guest agent or freezing, try again with QUIESCE=0
+
+
+
+
+cd /root/bin && QUIESCE=0 nohup bash -x ./forge-backup-full.sh > /root/fb-full.log 2>&1 &
+sleep 20; tail -15 /root/fb-full.log

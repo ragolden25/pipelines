@@ -1,0 +1,46 @@
+[root@ansible-forge bin]# molecule --version; ls /opt/ansible/nucleus/roles | grep -i -E 'grafana|configure|deploy'; ls /opt/ansible/nucleus/roles/*grafana*/tasks
+-bash: molecule: command not found
+build_grafana_stack
+configure_grafana_stack
+configure_guacamole
+configure_guacamole_r9
+deploy_remote_ssh_bootstrap
+grafana_agent_install
+kvm_configure_host
+stage_grafana
+weekly_build_grafana
+weekly_build_nginx_grafana
+/opt/ansible/nucleus/roles/build_grafana_stack/tasks:
+archive                        main.yml-with-scans
+build_functional.yml           refactor
+build_hardened.yml             render_compose.yml
+clean_task.yml                 save_functional.yml
+create_directories.yml         save_hardened.yml
+deliver_functional_images.yml  scan_sast_dockerfiles.yml
+deliver_hardened_images.yml    set_permissions.yml
+detect_versions.yml            sign_base_image.yml
+gather_dockerfiles.yml         sign_functional_images.yml
+generate_metadata.yml          sign_hardened_images.yml
+main-no-scans.yml              unified-scans.yml
+main.yml
+
+/opt/ansible/nucleus/roles/configure_grafana_stack/tasks:
+archive                finalize-ownership.yml  nucleus-images.yml
+clean-dashboards.yml   firewall.yml            stage-environment.yml
+compose-setup.yml      generate-readme.yml     symlink-current.yml
+container-cleanup.yml  grafana-app-config.yml  version13
+directory-setup.yml    main.yml                versions-and-logging.yml
+
+/opt/ansible/nucleus/roles/grafana_agent_install/tasks:
+main.yml
+
+/opt/ansible/nucleus/roles/stage_grafana/tasks:
+main.yml
+
+/opt/ansible/nucleus/roles/weekly_build_grafana/tasks:
+main.yml
+
+/opt/ansible/nucleus/roles/weekly_build_nginx_grafana/tasks:
+main.yml
+
+

@@ -4,3 +4,192 @@ find /opt/ansible/files/grafana -path '*weekly*' -name '*.gz' | sort | tail -12;
 
 
 cd /opt/ansible/nucleus/roles && { for f in weekly_common/tasks/build_image.yml weekly_common/tasks/finish.yml weekly_common/defaults/main.yml build_grafana_stack/tasks/save_functional.yml; do echo "== $f"; cat $f; done; } > /tmp/save-ref.txt 2>&1; wc -l /tmp/save-ref.txt
+
+
+
+[root@ansible-forge roles]# cat /tmp/save-ref.txt
+== weekly_common/tasks/build_image.yml
+---
+- name: "Weekly build {{ weekly_img.cls }} - progress"
+  ansible.builtin.include_tasks: progress.yml
+  vars:
+    weekly_step: "building {{ weekly_img.cls }} image (docker build)"
+
+- name: "Weekly build {{ weekly_img.cls }} - docker build"
+  ansible.builtin.command:
+    argv: >-
+      {{ ['docker', 'build', '--no-cache']
+         + (weekly_component.build_args | map('regex_replace', '^(.*)$', '--build-arg=\1') | list)
+         + ['-t', weekly_ns ~ weekly_img.cls ~ '/' ~ weekly_component.image ~ ':' ~ weekly_version,
+            '-f', 'Dockerfile.' ~ weekly_component.image ~ '.' ~ weekly_img.flavor, '.'] }}
+    chdir: "{{ weekly_wdir }}"
+  changed_when: true
+== weekly_common/tasks/finish.yml
+---
+# Always runs, success or not: record the result, remove the probe images, prune old weeks,
+# report to the dashboard (type "weekly", target = component).
+- name: Weekly - make sure the working directory exists
+  ansible.builtin.file:
+    path: "{{ weekly_wdir | default(weekly_build_root) }}"
+    state: directory
+    mode: "0775"
+  when: weekly_wdir is defined
+
+- name: Weekly - write result.env
+  ansible.builtin.copy:
+    dest: "{{ weekly_wdir }}/result.env"
+    content: |
+      STATUS={{ weekly_status }}
+      VERSION={{ weekly_version }}
+      FAILED_STEP={{ weekly_failed_step }}
+    mode: "0644"
+  when: weekly_wdir is defined
+
+- name: Weekly - remove the probe images
+  ansible.builtin.command: >-
+    docker rmi -f {{ weekly_ns }}ccop/{{ weekly_component.image }}:{{ weekly_version }}
+    {{ weekly_ns }}nucleus/{{ weekly_component.image }}:{{ weekly_version }}
+  changed_when: false
+  failed_when: false
+  when: weekly_version | length > 0
+
+- name: Weekly - prune old weeks (build and results trees)
+  ansible.builtin.shell: |
+    for root in "{{ weekly_comp_build }}/weekly" "{{ weekly_files_root }}/{{ weekly_component.files_root }}/weekly"; do
+      [ -d "$root" ] || continue
+      find "$root" -mindepth 1 -maxdepth 2 -type d -regextype posix-extended -regex '.*/[0-9]{2}' \
+          -printf '%T@ %p\n' | sort -rn | tail -n +{{ weekly_keep + 1 }} | cut -d' ' -f2- |
+        while IFS= read -r d; do rm -rf -- "$d"; done
+      find "$root" -mindepth 1 -maxdepth 1 -type d -empty -delete
+    done
+  args:
+    executable: /bin/bash
+  changed_when: false
+  failed_when: false
+  when: weekly_comp_build is defined
+
+# One textfile per component and week, so the dashboard can show the last few weeks side by side.
+# Class status: 1 built + scanned | 0 failed | 2 waiting on staging | 3 not completed (an earlier step failed)
+- name: Weekly - work out the status of each image class
+  ansible.builtin.set_fact:
+    weekly_class_status:
+      ccop: >-
+        {{ 1 if weekly_status == 'success'
+           else 2 if weekly_status == 'skipped'
+           else 0 if weekly_failed_class in ['', 'ccop']
+           else 1 if (weekly_failed_class == 'nucleus' and weekly_failed_scan | bool)
+           else 3 }}
+      nucleus: >-
+        {{ 1 if weekly_status == 'success'
+           else 2 if weekly_status == 'skipped'
+           else 0 if weekly_failed_class in ['', 'nucleus']
+           else 3 }}
+  when: weekly_w is defined
+
+- name: Weekly - write the dashboard record for this week
+  ansible.builtin.copy:
+    dest: "{{ weekly_textfile_dir }}/weekly_build_{{ weekly_component.name }}_w{{ weekly_w }}.prom"
+    mode: "0644"
+    content: |
+      # HELP pipeline_weekly_build Weekly early-warning build: 1 built+scanned, 0 failed, 2 waiting on staging, 3 not completed.
+      # TYPE pipeline_weekly_build gauge
+      {% for cls in ['ccop', 'nucleus'] %}
+      pipeline_weekly_build{stack="{{ weekly_component.stack }}",class="{{ cls }}",component="{{ weekly_component.image }}",quarter="{{ weekly_q }}",week="{{ weekly_w }}",version="{{ weekly_version if weekly_version | length > 0 else '-' }}"} {{ weekly_class_status[cls] | trim }}
+      {% endfor %}
+      # HELP pipeline_weekly_build_timestamp_seconds Unix time of this weekly build.
+      # TYPE pipeline_weekly_build_timestamp_seconds gauge
+      {% for cls in ['ccop', 'nucleus'] %}
+      pipeline_weekly_build_timestamp_seconds{stack="{{ weekly_component.stack }}",class="{{ cls }}",component="{{ weekly_component.image }}",quarter="{{ weekly_q }}",week="{{ weekly_w }}",version="{{ weekly_version if weekly_version | length > 0 else '-' }}"} {{ now(utc=true).strftime('%s') }}
+      {% endfor %}
+  failed_when: false
+  when: weekly_w is defined
+
+- name: Weekly - keep only the newest weeks of dashboard records
+  ansible.builtin.shell: >-
+    ls -1t {{ weekly_textfile_dir }}/weekly_build_{{ weekly_component.name }}_w*.prom 2>/dev/null
+    | tail -n +{{ weekly_keep + 1 }} | xargs -r rm -f
+  changed_when: false
+  failed_when: false
+
+- name: Weekly - report to the dashboard
+  ansible.builtin.command:
+    argv:
+      - "{{ weekly_emit_event }}"
+      - weekly
+      - "{{ weekly_component.name }}"
+      - "{{ 'success' if weekly_status == 'success' else 'fail' }}"
+      - "{{ weekly_version if weekly_status != 'skipped' and weekly_version | length > 0 else ('waiting-on-staging' if weekly_status == 'skipped' else 'unknown') }}"
+      - "{{ weekly_interval }}"
+  changed_when: false
+  failed_when: false
+
+- name: Weekly - add to the run summary
+  ansible.builtin.set_fact:
+    weekly_results: >-
+      {{ weekly_results | default({}) | combine({weekly_component.name:
+         ('ok       ' ~ weekly_version) if weekly_status == 'success'
+         else ('waiting  (nothing staged yet)') if weekly_status == 'skipped'
+         else ('FAILED   ' ~ (weekly_version if weekly_version | length > 0 else '?') ~ ' at ' ~ weekly_failed_step)}) }}
+== weekly_common/defaults/main.yml
+---
+# defaults for weekly_common -- the shared task library for all weekly_build_<component> roles.
+#
+# Weekly builds are EARLY WARNING only. They read the quarter build directories and the staged
+# content, and write only to:
+#   <build dir>/weekly/<quarter>/<week>/          working copy of the quarter build dir
+#   <files root>/weekly/<week>/provenance/<class> weekly scan results (never a quarter dir)
+#   images  weekly/<stack>/<ccop|nucleus>/<image>:<version>   (removed after the run)
+
+weekly_ansible_root: /opt/ansible
+weekly_build_root: "{{ weekly_ansible_root }}/build"
+weekly_staged_root: "{{ weekly_ansible_root }}/staged"
+weekly_files_root: "{{ weekly_ansible_root }}/files"
+weekly_scripts: "{{ weekly_files_root }}/common/scripts"
+weekly_scan_tmp: "{{ weekly_ansible_root }}/molecule/scans/tmp"
+weekly_emit_event: /usr/local/bin/emit_event.sh
+weekly_textfile_dir: /var/lib/node_exporter/textfile
+
+# Quarter and week. Leave empty to read build/current_quarter and common/scripts/determine_week.sh.
+weekly_quarter: ""
+weekly_week: ""
+
+weekly_keep: 4              # newest week directories kept per tree
+weekly_interval: 604800     # expected seconds between runs (dashboard freshness)
+
+# Images built per component: flavor -> class (ccop = functional, nucleus = hardened)
+weekly_flavors:
+  - { flavor: functional, cls: ccop }
+  - { flavor: hardened, cls: nucleus }
+== build_grafana_stack/tasks/save_functional.yml
+---
+# =====================================================================
+# 1.0 Save functional images
+# =====================================================================
+
+- name: Save functional Grafana image
+  command:
+    cmd: >
+      docker save ccop/grafana:{{ grafana_version }}
+      -o ccop-grafana-{{ grafana_version }}.tar.gz
+    chdir: "{{ grafana_build }}/grafana/{{ quarter }}"
+
+- name: Save functional Prometheus image
+  command:
+    cmd: >
+      docker save ccop/prometheus:{{ prometheus_version }}
+      -o ccop-prometheus-{{ prometheus_version }}.tar.gz
+    chdir: "{{ grafana_build }}/prometheus/{{ quarter }}"
+
+- name: Save functional NGINX image
+  command:
+    cmd: >
+      docker save ccop/nginx:{{ nginx_version }}
+      -o ccop-nginx-{{ nginx_version }}.tar.gz
+    chdir: "{{ grafana_build }}/nginx/{{ quarter }}"
+
+- name: Save functional IDRAC image
+  command:
+    cmd: >
+      docker save ccop/idrac:{{ idrac_version }}
+      -o ccop-idrac-{{ idrac_version }}.tar.gz
+    chdir: "{{ grafana_build }}/idrac/{{ quarter }}"

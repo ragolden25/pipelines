@@ -122,3 +122,16 @@ Once you see Starting the backup, you’re done with it. It runs for hours witho
 
 Molecule. Run the /tmp/cgs.txt command from earlier on ansible-forge and send me the file. Everything else for the Grafana 12 scenario waits on it, and I can build the scenario while you do other work.
 Later, if the hang happens again: the two log commands and the persistent journal fix are for that. A repeat will have evidence, and today’s missing logs aren’t worth more of your time.
+
+
+[root@kvm26 ~]# cd /root/bin && QUIESCE=0 nohup bash -x ./forge-backup-full.sh > /root/fb-full.log 2>&1 &
+sleep 30; tail -5 /root/fb-full.log
+[1] 1427944
+
+
+++ tr -s ' '
+++ paste '-sd '
++ echo '13:15:43  '
+13:15:43
++ sleep 30
+

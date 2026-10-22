@@ -1,1 +1,184 @@
 cd /opt/ansible/nucleus/roles/configure_grafana_stack && { echo "== main"; cat tasks/main.yml; echo "== defaults"; cat defaults/main.yml; echo "== vars"; ls vars; echo "== templates"; ls templates files 2>&1; echo "== grafana-app-config"; cat tasks/grafana-app-config.yml; echo "== playbook"; ls /opt/ansible/nucleus/playbooks | grep -i grafana; } > /tmp/cgs.txt 2>&1; wc -l /tmp/cgs.txt
+
+
+
+[root@ansible-forge configure_grafana_stack]# cat /tmp/cgs.txt
+== main
+---
+# tasks file for configure_grafana_stack
+# Reverted to provisioning-based dashboards/datasources/alerting (v12
+# behavior) while keeping the v13 phase structure. push-api-payloads.yml
+# (the /apis/dashboard.grafana.app/v2/... REST import) is left on disk
+# but no longer included here — Grafana picks up dashboards, datasources,
+# and alerting straight from provisioning/ now, no API calls needed.
+
+# ───────────────────────────────────────────────
+# Phase 1: Environment & File Prep
+# ───────────────────────────────────────────────
+- name: Execute environmental bootstrap and file staging
+  ansible.builtin.include_tasks: stage-environment.yml
+
+# ───────────────────────────────────────────────
+# Phase 2: Operations & Optimization
+# ───────────────────────────────────────────────
+- name: Run dashboard regex formatting and cleaning tasks
+  ansible.builtin.include_tasks: clean-dashboards.yml
+
+- name: Fix final post-cleanup file bounds
+  ansible.builtin.file:
+    path: "/var/lib/containers/grafana/provisioning/dashboards/{{ item }}"
+    mode: '0644'
+    owner: '65532'
+    group: '65532'
+  loop:
+    - nuc_idrac_dashboard.json
+    - nuc_linux_dashboard.json
+    - nuc_windows_dashboard.json
+
+- name: Run standard orchestration environment stack scripts
+  ansible.builtin.command: /var/lib/containers/compose/run.sh
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+
+# ───────────────────────────────────────────────
+# README Generation
+# ───────────────────────────────────────────────
+- name: Generate README from template
+  ansible.builtin.include_tasks: generate-readme.yml
+  run_once: true
+== defaults
+---
+# defaults file for configure_grafana_stack
+
+grafana_stack_artifact_dir: "{{ grafana_files }}/current"
+
+# Empty version defaults (overridden by versions.env)
+GRAFANA_VERSION: ""
+PROMETHEUS_VERSION: ""
+NGINX_VERSION: ""
+
+# Default empty FQDN (overridden in vars/main.yml)
+grafana_fqdns: {}
+
+# Default empty cert mapping (overridden in vars/main.yml)
+grafana_cert_files: {}
+== vars
+main.yml
+== templates
+files:
+
+templates:
+README.md.j2
+== grafana-app-config
+---
+# Static configs, dashboards/certs, alerting provisioning, datasource template, nsswitch, grafana.ini.
+# FIX: dropped grafana/provisioning/api/grafana_api_config.json — that
+# was staging for the v13 API-based provisioning flow (push-api-payloads.yml),
+# which this role no longer runs now that dashboards/datasources/alerting
+# go back to file-based provisioning.
+- name: Copy static configuration files
+  ansible.builtin.copy:
+    src: "{{ grafana_stack_artifact_dir }}/{{ item.src }}"
+    dest: "/var/lib/containers/{{ item.dest }}"
+    owner: "{{ item.owner | default('65532') }}"
+    group: "{{ item.owner | default('65532') }}"
+    mode: '0644'
+  loop:
+    - { src: 'prometheus/prometheus.yml', dest: 'prometheus/prometheus.yml' }
+    - { src: 'idrac/idrac.yml', dest: 'idrac/idrac.yml', owner: '0' }
+    - { src: 'nginx/nginx.conf', dest: 'nginx/nginx.conf' }
+    - { src: 'nginx/mime.types', dest: 'nginx/mime.types' }
+    - { src: 'nginx/options-ssl-nginx.conf', dest: 'nginx/options-ssl-nginx.conf' }
+    - { src: 'nginx/ssl-dhparams.pem', dest: 'nginx/ssl-dhparams.pem' }
+    - { src: 'nginx/conf.d/grafana.conf', dest: 'nginx/conf.d/grafana.conf' }
+
+# FIX: added default.yml — this is the dashboard-provisioning *provider*
+# config (tells Grafana which folder to scan for dashboard JSONs). Without
+# it, the dashboard JSONs below get copied onto disk but Grafana never
+# picks them up. pre-api-main.yml copied this; the v13/API chain dropped
+# it since dashboards were being POSTed via REST instead.
+- name: Copy loop variables for dashboards and certs
+  ansible.builtin.copy:
+    src: "{{ grafana_stack_artifact_dir }}/{{ item.dir }}/{{ item.file }}"
+    dest: "/var/lib/containers/{{ item.dir }}/{{ item.file }}"
+    owner: '65532'
+    group: '65532'
+    mode: '0644'
+  loop:
+    - { dir: 'grafana/provisioning/dashboards', file: 'default.yml' }
+    - { dir: 'grafana/provisioning/dashboards', file: 'nuc_idrac_dashboard.json' }
+    - { dir: 'grafana/provisioning/dashboards', file: 'nuc_linux_dashboard.json' }
+    - { dir: 'grafana/provisioning/dashboards', file: 'nuc_windows_dashboard.json' }
+    - { dir: 'nginx/certs', file: 'std1-castore.pem' }
+    - { dir: 'nginx/certs', file: 'std1.key' }
+
+# FIX: switched from the .json API-payload versions (meant for
+# push-api-payloads.yml's REST alerting import, which this role no
+# longer runs) back to the native Grafana provisioning .yml format,
+# which Grafana reads directly from provisioning/alerting/ on startup —
+# same files pre-api-main.yml staged.
+- name: Copy Grafana alerting provisioning files
+  ansible.builtin.copy:
+    src: "{{ grafana_stack_artifact_dir }}/grafana/provisioning/alerting/{{ item }}"
+    dest: "/var/lib/containers/grafana/provisioning/alerting/{{ item }}"
+    owner: '65532'
+    group: '65532'
+    mode: '0644'
+  loop:
+    - contact-points.yml
+    - idrac-alerts.yml
+    - linux-alerts.yml
+    - notification-policies.yml
+    - windows-alerts.yml
+
+# FIX: replaced the datasource.json API-payload copy (for
+# push-api-payloads.yml's REST datasource import) with the templated
+# provisioning-native version pre-api-main.yml used — Grafana reads
+# this directly from provisioning/datasources/ on startup, no API call
+# needed. Not hostname-templated per your note; std1 is the only
+# target right now.
+- name: Render Grafana Prometheus datasource (provisioning)
+  ansible.builtin.template:
+    src: "{{ grafana_stack_artifact_dir }}/grafana/provisioning/datasources/prometheus.yml.j2"
+    dest: "/var/lib/containers/grafana/provisioning/datasources/prometheus.yml"
+    owner: '65532'
+    group: '65532'
+    mode: '0644'
+
+- name: Create grafana.access.log
+  ansible.builtin.file:
+    path: /var/lib/containers/nginx/log/grafana.access.log
+    state: touch
+    owner: '65532'
+    group: '65532'
+    mode: '0644'
+
+- name: Create error.log
+  ansible.builtin.file:
+    path: /var/lib/containers/nginx/log/error.log
+    state: touch
+    owner: '65532'
+    group: '65532'
+    mode: '0644'
+
+- name: Install hardened nsswitch.conf for NGINX DNS resolution
+  ansible.builtin.copy:
+    dest: /var/lib/containers/nginx/nsswitch.conf
+    owner: '65532'
+    group: '65532'
+    mode: '0644'
+    content: |
+      hosts: files dns
+- name: Render grafana.ini
+  ansible.builtin.template:
+    src: "{{ grafana_stack_artifact_dir }}/grafana/config/grafana.ini.j2"
+    dest: /var/lib/containers/grafana/config/grafana.ini
+    mode: '0644'
+    owner: '65532'
+    group: '65532'
+== playbook
+build_grafana_stack.yml
+configure_grafana_stack.yml
+play_build_grafana_stack.sh
+play_configure_grafana_stack.sh
+

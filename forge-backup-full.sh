@@ -59,7 +59,7 @@ if [ $DRY -eq 1 ]; then
 fi
 
 # ---- the destination must be writable by the user QEMU runs as -------------------------
-first=$(virsh domblklist "$DOM" --details | awk '$1=="file" && $2=="disk" {print $4; exit}')
+first=$(virsh domblklist "$DOM" --details | awk '$1=="file" && $2=="disk" && !f {print $4; f=1}' || true)
 OWN=$(stat -c %U:%G "$first" 2>/dev/null || echo root:root)
 mkdir -p "$DEST"; chown "$OWN" "$BASE" "$DEST"; chmod 750 "$BASE" "$DEST"
 
@@ -68,7 +68,7 @@ echo; echo "Starting the backup of $DOM at $(date +%T) into $DEST"
 FROZE=0
 if [ "$QUIESCE" = 1 ]; then
   virsh domfsfreeze "$DOM" >/dev/null && FROZE=1 || { echo "guest freeze failed; retry with QUIESCE=0"; exit 1; }
-  trap 'virsh domfsthaw "$DOM" >/dev/null 2>&1' EXIT
+  trap 'virsh domfsthaw "$DOM" >/dev/null 2>&1; rm -rf "$WORK"' EXIT
 fi
 virsh backup-begin "$DOM" "$WORK/backup.xml" "$WORK/checkpoint.xml" \
   || { echo "backup-begin failed"; [ $FROZE = 1 ] && virsh domfsthaw "$DOM" >/dev/null 2>&1; exit 1; }

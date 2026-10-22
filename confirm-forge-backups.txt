@@ -1,0 +1,1 @@
+grep -E 'BACKUP|Job finished|^  vd|^  [a-z-]+\.qcow2|checkpoint' /root/fb-full.log | tail -15; cat /var/lib/libvirt/images/ansible-forge-backup/*full/manifest.txt

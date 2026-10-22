@@ -20,7 +20,4 @@ if [[ "$ACTUAL_SOURCE" != "$EXPECTED_SOURCE" ]]; then
     exit 1
 fi
 
-echo "filesystem mounted correctly"
-echo "conducted weekly backups from $(hostname -f) to shares server on $(date +%F-%H%M)" >> /root/backups.log
-
-/bin/bash /root/bin/backup.body.sh
+/bin/bash /root/bin/backup.body.sh && echo "weekly backup OK from $(hostname -f) on $(date +%F-%H%M)" >> /root/backups.log || echo "Backup failed on $(date +%F-%H%M)" >> /root/failures.log

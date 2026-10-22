@@ -1,0 +1,15 @@
+You can do both. The backup runs inside QEMU on the R640 and doesn’t need your terminal, so start it in the background and move on:
+
+cd /root/bin && QUIESCE=0 nohup ./forge-backup-full.sh > /root/fb-full.log 2>&1 &
+
+Check on it any time with tail -5 /root/fb-full.log. It should print BACKUP OK at the end, in roughly 1–3 hours.
+
+The VM stays up the whole time, but its disks will be a bit slower while the copy runs, because the backup reads all six disks. Your Molecule scenario runs and scans may take longer than usual in that window, and they are not at risk of failing. If the slowdown gets in the way, tell me and I’ll adjust the plan.
+
+For Molecule on the Grafana stack, I need these from ansible-forge. Run the commands as the ansible user and paste the output:
+
+
+molecule --version; ls /opt/ansible/nucleus/roles | grep -i -E 'grafana|configure|deploy'; ls /opt/ansible/nucleus/roles/*grafana*/tasks
+
+
+python3 --version; ansible --version | head -1; docker --version; podman --version; df -h /opt/ansible/molecule

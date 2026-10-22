@@ -1,0 +1,38 @@
+[root@kvm26 bin]# virsh dumpxml ansible-forge | grep -A4 "<cpu"
+  <cpu mode='host-passthrough' check='none' migratable='on'>
+    <topology sockets='2' dies='1' clusters='1' cores='6' threads='1'/>
+  </cpu>
+  <clock offset='utc'>
+    <timer name='rtc' tickpolicy='catchup'/>
+
+[root@kvm26 bin]# lscpu | grep 'Model name'
+Model name:                              Intel(R) Xeon(R) Gold 5118 CPU @ 2.30GHz
+BIOS Model name:                         Intel(R) Xeon(R) Gold 5118 CPU @ 2.30GHz
+
+[root@kvm26 bin]# virsh version | grep -E 'libvirt|QEMU'
+Compiled against library: libvirt 11.10.0
+Using library: libvirt 11.10.0
+Using API: QEMU 11.10.0
+Running hypervisor: QEMU 10.1.0
+
+
+[root@kvm25 ~]# virsh dumpxml ansible | grep -A4 "<cpu"
+  <cpu mode='host-passthrough' check='none' migratable='on'/>
+  <clock offset='utc'>
+    <timer name='rtc' tickpolicy='catchup'/>
+    <timer name='pit' tickpolicy='delay'/>
+    <timer name='hpet' present='no'/>
+
+[root@kvm25 ~]# lscpu | grep 'Model name'
+Model name:                              Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz
+BIOS Model name:                         Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz
+
+[root@kvm25 ~]# virsh version | grep -E 'libvirt|QEMU'
+Compiled against library: libvirt 11.10.0
+Using library: libvirt 11.10.0
+Using API: QEMU 11.10.0
+Running hypervisor: QEMU 10.1.0
+
+[root@kvm25 ~]# df -h /var/lib/libvirt/images
+Filesystem               Size  Used Avail Use% Mounted on
+/dev/mapper/vg00-images   11T  3.1T  7.7T  29% /var/lib/libvirt/images

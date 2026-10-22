@@ -1,2 +1,48 @@
 cd /root/bin && QUIESCE=0 nohup bash -x ./forge-backup-full.sh > /root/fb-full.log 2>&1 &
 sleep 20; tail -15 /root/fb-full.log
+
+
+
+
+[root@kvm26 ~]# tail -15 /root/fb-full.log
++ echo '  <disk name='\''vdb'\'' checkpoint='\''bitmap'\''/>'
++ for r in "${ROWS[@]}"
++ echo '  <disk name='\''vdc'\'' checkpoint='\''bitmap'\''/>'
++ for r in "${ROWS[@]}"
++ echo '  <disk name='\''vdd'\'' checkpoint='\''bitmap'\''/>'
++ for r in "${ROWS[@]}"
++ echo '  <disk name='\''vde'\'' checkpoint='\''bitmap'\''/>'
++ for r in "${ROWS[@]}"
++ echo '  <disk name='\''vdf'\'' checkpoint='\''bitmap'\''/>'
++ echo '</disks></domaincheckpoint>'
++ '[' 0 -eq 1 ']'
+++ virsh domblklist ansible-forge --details
+++ awk '$1=="file" && $2=="disk" {print $4; exit}'
++ first=/var/lib/libvirt/images/ansible-flat.qcow2
++ rm -rf /tmp/tmp.6Q0ZQaP0tc
+
+No idea why it continues to fail, but also unsure if it should be using /tmp?
+
+
+/dev/sda7                  4.0G   61M  3.9G   2% /tmp
+
+I also decided to check selinux alerts.
+
+[root@kvm26 ~]# sealert -a /var/log/audit/audit.log
+100% done
+found 2 alerts in /var/log/audit/audit.log
+
+SELinux is preventing /usr/libexec/switcheroo-control from using the sys_admin capability.
+
+allow this access for now by executing:
+# ausearch -c 'switcheroo-cont' --raw | audit2allow -M my-switcheroocont
+# semodule -X 300 -i my-switcheroocont.pp
+
+SELinux is preventing /usr/sbin/setfiles from module_request access on the system labeled kernel_t.
+
+If you want to allow domain to kernel load modules
+Then you must tell SELinux about this by enabling the 'domain_kernel_load_modules' boolean.
+
+Do
+setsebool -P domain_kernel_load_modules 1
+

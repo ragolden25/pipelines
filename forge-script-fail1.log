@@ -1,0 +1,17 @@
+[root@kvm26 bin]# pwd
+/root/bin
+
+[root@kvm26 bin]# ./forge-backup-full.sh
+Disks of ansible-forge:
+  vda  /var/lib/libvirt/images/ansible-flat.qcow2       191 GB on the host
+  vdb  ansible-data                                     523 GB on the host
+  vdc  ansible-molecule                                  49 GB on the host
+  vdd  ansible-build                                     75 GB on the host
+  vde  ansible-shipping                                  51 GB on the host
+  vdf  ansible-staged                                    27 GB on the host
+Needed about 919 GB, free 4110 GB in /var/lib/libvirt/images/ansible-forge-backup
+
+Starting the backup of ansible-forge at 11:42:15 into /var/lib/libvirt/images/ansible-forge-backup/20261022-1142-full
+error: Unable to freeze filesystems
+error: guest agent command failed: unable to execute QEMU agent command 'guest-fsfreeze-freeze': failed to open /var/lib/docker: Permission denied
+guest freeze failed; retry with QUIESCE=0

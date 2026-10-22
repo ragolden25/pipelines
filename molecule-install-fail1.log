@@ -1,0 +1,27 @@
+1 selinux-0.3.0 subprocess-tee-0.4.2 typing-extensions-4.16.0 urllib3-2.8.0 wcmatch-11.2
+
+---- result
+molecule 25.1.0 using python 3.11
+    ansible:2.15.13
+    openstack:26.10.12 from molecule_plugins requiring collections: openstack.cloud>=2.1.0
+    containers:26.10.12 from molecule_plugins requiring collections: ansible.posix>=1.4.0 community.docker>=3.10.2 containers.podman>=1.8.1
+    podman:26.10.12 from molecule_plugins requiring collections: containers.podman>=1.8.1
+    default:25.1.0 from molecule
+    vagrant:26.10.12 from molecule_plugins requiring collections: community.vagrant>=1.0.1
+    docker:26.10.12 from molecule_plugins requiring collections: community.docker>=3.10.2 ansible.posix>=1.4.0
+    ec2:26.10.12 from molecule_plugins
+    azure:26.10.12 from molecule_plugins
+    gce:26.10.12 from molecule_plugins requiring collections: google.cloud>=1.0.2 community.crypto>=1.8.0
+Traceback (most recent call last):
+  File "/opt/ansible/molecule/venv/bin/ansible", line 3, in <module>
+    from ansible.cli.adhoc import main
+  File "/opt/ansible/molecule/venv/lib64/python3.11/site-packages/ansible/cli/__init__.py", line 102, in <module>
+    from ansible.module_utils.common.file import is_executable
+  File "/opt/ansible/molecule/venv/lib64/python3.11/site-packages/ansible/module_utils/common/file.py", line 18, in <module>
+    import selinux  # pylint: disable=unused-import
+    ^^^^^^^^^^^^^^
+  File "/opt/ansible/molecule/venv/lib64/python3.11/site-packages/selinux/__init__.py", line 106, in <module>
+    check_system_sitepackages()
+  File "/opt/ansible/molecule/venv/lib64/python3.11/site-packages/selinux/__init__.py", line 102, in check_system_sitepackages
+    raise Exception(
+Exception: Failed to detect selinux python bindings at ['/usr/local/lib64/python3.11/site-packages', '/usr/local/lib/python3.11/site-packages', '/usr/lib64/python3.11/site-packages', '/usr/lib/python3.11/site-packages']

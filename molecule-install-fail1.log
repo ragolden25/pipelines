@@ -56,3 +56,7 @@ ansible [core 2.15.13]
 molecule 25.1.0 using python 3.11
 docker-ok
 
+
+
+cd /opt/ansible/nucleus/roles/configure_grafana_stack && { echo "== main"; cat tasks/main.yml; echo "== defaults"; cat defaults/main.yml; echo "== vars"; ls vars; echo "== templates"; ls templates files 2>&1; echo "== grafana-app-config"; cat tasks/grafana-app-config.yml; echo "== playbook"; ls /opt/ansible/nucleus/playbooks | grep -i grafana; } > /tmp/cgs.txt 2>&1; wc -l /tmp/cgs.txt
+

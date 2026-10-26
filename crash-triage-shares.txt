@@ -1,0 +1,159 @@
+=== shares.nuc2.scires.com  Mon Oct 26 09:07:44 AM CDT 2026
+--- kernel / tools
+5.14.0-687.59.1.el9_8.x86_64
+Red Hat Enterprise Linux release 9.8 (Plow)
+13.0.10.0 (build-25056151)
+active
+--- uptime and reboot history
+2026-10-26 07:57:57
+reboot   system boot  5.14.0-687.59.1. Mon Oct 26 07:57   still running
+reboot   system boot  5.14.0-687.59.1. Sun Oct 25 01:01   still running
+shutdown system down  5.14.0-687.54.1. Sun Oct 25 01:00 - 01:01  (00:00)
+reboot   system boot  5.14.0-687.54.1. Mon Oct 19 11:39 - 01:00 (5+13:21)
+reboot   system boot  5.14.0-687.54.1. Sun Oct 11 01:01 - 01:00 (13+23:59)
+shutdown system down  5.14.0-687.53.1. Sun Oct 11 01:00 - 01:01  (00:00)
+reboot   system boot  5.14.0-687.53.1. Sun Oct  4 01:01 - 01:00 (6+23:59)
+shutdown system down  5.14.0-687.49.1. Sun Oct  4 01:00 - 01:01  (00:00)
+reboot   system boot  5.14.0-687.49.1. Sun Sep 27 01:00 - 01:00 (7+00:00)
+shutdown system down  5.14.0-687.48.1. Sun Sep 27 01:00 - 01:00  (00:00)
+reboot   system boot  5.14.0-687.48.1. Sun Sep 20 01:00 - 01:00 (6+23:59)
+shutdown system down  5.14.0-687.45.1. Sun Sep 20 01:00 - 01:00  (00:00)
+
+wtmp begins Mon Aug 12 09:44:41 2024
+--- journal persistent?
+IDX BOOT ID                          FIRST ENTRY                 LAST ENTRY
+  0 75df66ef9e4f474380df8b53265a1480 Mon 2026-10-26 07:57:36 CDT Mon 2026-10-26 09:03:59 CDT
+--- crash dumps
+active
+total 4
+drwxr-xr-x.  2 root root    6 Feb 12  2026 .
+drwxr-xr-x. 21 root root 4096 Feb 25  2025 ..
+--- weekly timers
+NEXT                        LEFT          LAST                        PASSED    UNIT                         ACTIVATES
+Mon 2026-10-26 10:31:41 CDT 1h 23min left Mon 2026-10-26 08:36:07 CDT 31min ago dnf-makecache.timer          dnf-makecache.service
+Tue 2026-10-27 00:00:00 CDT 14h left      Mon 2026-10-26 00:00:04 CDT 9h ago    logrotate.timer              logrotate.service
+Tue 2026-10-27 00:00:00 CDT 14h left      Mon 2026-10-26 00:00:04 CDT 9h ago    mlocate-updatedb.timer       mlocate-updatedb.service
+Tue 2026-10-27 08:13:07 CDT 23h left      Mon 2026-10-26 08:13:07 CDT 54min ago systemd-tmpfiles-clean.timer systemd-tmpfiles-clean.service
+
+4 timers listed.
+disabled
+mounts with discard: 0
+--- cron
+/etc/cron.d:
+0hourly
+
+/etc/cron.weekly:
+
+0 3 * * 7 /root/bin/backup.sh
+0 0 * * 7 /usr/bin/yum update -y
+0 1 * * 7 /usr/sbin/shutdown -r now
+
+
+--- memory / swap / dirty
+               total        used        free      shared  buff/cache   available
+Mem:            3622        1367         294           2        2244        2254
+Swap:           2047           6        2041
+NAME      TYPE      SIZE USED PRIO
+/dev/dm-1 partition   2G 6.8M   -2
+vm.swappiness = 30
+vm.dirty_ratio = 30
+vm.dirty_background_ratio = 10
+vm.overcommit_memory = 0
+--- disks
+Filesystem               Type      Size  Used Avail Use% Mounted on
+efivarfs                 efivarfs  256K   48K  204K  19% /sys/firmware/efi/efivars
+/dev/mapper/vg00-root    xfs        50G   13G   38G  25% /
+/dev/mapper/vg01-data    xfs        15T  3.9T   11T  27% /data
+/dev/mapper/vg00-home    xfs        25G  211M   25G   1% /home
+/dev/sda2                xfs       960M  466M  495M  49% /boot
+/dev/mapper/vg00-tmp     xfs       4.0G   61M  3.9G   2% /tmp
+/dev/mapper/vg00-var     xfs        50G  1.8G   49G   4% /var
+/dev/sda1                vfat      599M  7.7M  592M   2% /boot/efi
+/dev/mapper/vg00-log     xfs        10G  145M  9.8G   2% /var/log
+/dev/mapper/vg00-var_tmp xfs       4.0G   61M  3.9G   2% /var/tmp
+/dev/mapper/vg00-audit   xfs       4.0G   93M  3.9G   3% /var/log/audit
+NAME               SIZE TYPE MOUNTPOINT     DISC-MAX
+sda                150G disk                      0B
+├─sda1             600M part /boot/efi            0B
+├─sda2               1G part /boot                0B
+└─sda3           148.4G part                      0B
+  ├─vg00-root     49.4G lvm  /                    0B
+  ├─vg00-swap        2G lvm  [SWAP]               0B
+  ├─vg00-home       25G lvm  /home                0B
+  ├─vg00-var_tmp     4G lvm  /var/tmp             0B
+  ├─vg00-audit       4G lvm  /var/log/audit       0B
+  ├─vg00-log        10G lvm  /var/log             0B
+  ├─vg00-tmp         4G lvm  /tmp                 0B
+  └─vg00-var        50G lvm  /var                 0B
+sr0               10.3G rom                       0B
+nvme0n1              8T disk                      0B
+└─vg01-data       14.5T lvm  /data                0B
+nvme0n2            6.5T disk                      0B
+└─vg01-data       14.5T lvm  /data                0B
+--- errors in this boot (journal)
+Oct 26 07:57:39 shares.nuc2.scires.com kernel: vmwgfx 0000:00:0f.0: [drm] VRAM at 0x00000000f0000000 size is 131072 KiB
+Oct 26 07:57:39 shares.nuc2.scires.com kernel: vmwgfx 0000:00:0f.0: [drm] Running on SVGA version 2.
+Oct 26 07:57:39 shares.nuc2.scires.com kernel: vmwgfx 0000:00:0f.0: [drm] Capabilities: rect copy, cursor, cursor bypass, cursor bypass 2, 8bit emulation, alpha cursor, extended fifo, multimon, pitchlock, irq mask, display topology, gmr, traces, gmr2, screen object 2, command buffers, command buffers 2, gbobject, dx, hp cmd queue, no bb restriction, cap2 register, 
+Oct 26 07:57:39 shares.nuc2.scires.com kernel: vmwgfx 0000:00:0f.0: [drm] Capabilities2: grow otable, intra surface copy, dx2, gb memsize 2, screendma reg, otable ptdepth2, non ms to ms stretchblt, cursor mob, mshint, cb max size 4mb, dx3, frame type, trace full fb, extra regs, lo staging, 
+Oct 26 07:57:39 shares.nuc2.scires.com kernel: vmwgfx 0000:00:0f.0: [drm] DMA map mode: Caching DMA mappings.
+Oct 26 07:57:39 shares.nuc2.scires.com kernel: vmwgfx 0000:00:0f.0: [drm] Legacy memory limits: VRAM = 4096 KiB, FIFO = 256 KiB, surface = 0 KiB
+Oct 26 07:57:39 shares.nuc2.scires.com kernel: vmwgfx 0000:00:0f.0: [drm] MOB limits: max mob size = 1048576 KiB, max mob pages = 2097152
+Oct 26 07:57:39 shares.nuc2.scires.com kernel: vmwgfx 0000:00:0f.0: [drm] Max GMR ids is 64
+Oct 26 07:57:39 shares.nuc2.scires.com kernel: vmwgfx 0000:00:0f.0: [drm] Max number of GMR pages is 65536
+Oct 26 07:57:39 shares.nuc2.scires.com kernel: vmwgfx 0000:00:0f.0: [drm] Maximum display memory size is 262144 KiB
+Oct 26 07:57:39 shares.nuc2.scires.com kernel: vmwgfx 0000:00:0f.0: [drm] Screen Target display unit initialized
+Oct 26 07:57:39 shares.nuc2.scires.com kernel: vmwgfx 0000:00:0f.0: [drm] Fifo max 0x00040000 min 0x00001000 cap 0x0000077f
+Oct 26 07:57:39 shares.nuc2.scires.com kernel: vmwgfx 0000:00:0f.0: [drm] Using command buffers with DMA pool.
+Oct 26 07:57:39 shares.nuc2.scires.com kernel: vmwgfx 0000:00:0f.0: [drm] Available shader model: Legacy.
+Oct 26 07:57:39 shares.nuc2.scires.com kernel: [drm] Initialized vmwgfx 2.21.0 for 0000:00:0f.0 on minor 0
+Oct 26 07:57:39 shares.nuc2.scires.com kernel: fbcon: vmwgfxdrmfb (fb0) is primary device
+Oct 26 07:57:39 shares.nuc2.scires.com kernel: vmwgfx 0000:00:0f.0: [drm] fb0: vmwgfxdrmfb frame buffer device
+Oct 26 07:57:49 shares.nuc2.scires.com kernel: vmw_vmci 0000:00:07.7: enabling device (0000 -> 0003)
+Oct 26 07:57:49 shares.nuc2.scires.com kernel: vmw_vmci 0000:00:07.7: MMIO register access is available
+Oct 26 07:57:49 shares.nuc2.scires.com kernel: vmw_vmci 0000:00:07.7: Using capabilities 0x3c
+--- errors in previous boots and old logs
+/var/log/messages-20261019:Oct 11 01:01:00 shares kernel: vmwgfx 0000:00:0f.0: [drm] Available shader model: Legacy.
+/var/log/messages-20261019:Oct 11 01:01:00 shares kernel: [drm] Initialized vmwgfx 2.21.0 for 0000:00:0f.0 on minor 0
+/var/log/messages-20261019:Oct 11 01:01:00 shares kernel: fbcon: vmwgfxdrmfb (fb0) is primary device
+/var/log/messages-20261019:Oct 11 01:01:00 shares kernel: vmwgfx 0000:00:0f.0: [drm] fb0: vmwgfxdrmfb frame buffer device
+/var/log/messages-20261019:Oct 11 01:01:06 shares kernel: vmw_vmci 0000:00:07.7: enabling device (0000 -> 0003)
+/var/log/messages-20261019:Oct 11 01:01:06 shares kernel: vmw_vmci 0000:00:07.7: MMIO register access is available
+/var/log/messages-20261019:Oct 11 01:01:06 shares kernel: vmw_vmci 0000:00:07.7: Using capabilities 0x3c
+/var/log/messages-20261025:Oct 19 11:39:13 shares kernel: NMI watchdog: Perf NMI watchdog permanently disabled
+/var/log/messages-20261025:Oct 19 11:39:16 shares kernel: vmwgfx 0000:00:0f.0: vgaarb: deactivate vga console
+/var/log/messages-20261025:Oct 19 11:39:16 shares kernel: vmwgfx 0000:00:0f.0: [drm] FIFO at 0x00000000fb800000 size is 8192 KiB
+/var/log/messages-20261025:Oct 19 11:39:16 shares kernel: vmwgfx 0000:00:0f.0: [drm] VRAM at 0x00000000f0000000 size is 131072 KiB
+/var/log/messages-20261025:Oct 19 11:39:16 shares kernel: vmwgfx 0000:00:0f.0: [drm] Running on SVGA version 2.
+/var/log/messages-20261025:Oct 19 11:39:16 shares kernel: vmwgfx 0000:00:0f.0: [drm] Capabilities: rect copy, cursor, cursor bypass, cursor bypass 2, 8bit emulation, alpha cursor, extended fifo, multimon, pitchlock, irq mask, display topology, gmr, traces, gmr2, screen object 2, command buffers, command buffers 2, gbobject, dx, hp cmd queue, no bb restriction, cap2 register, 
+/var/log/messages-20261025:Oct 19 11:39:16 shares kernel: vmwgfx 0000:00:0f.0: [drm] Capabilities2: grow otable, intra surface copy, dx2, gb memsize 2, screendma reg, otable ptdepth2, non ms to ms stretchblt, cursor mob, mshint, cb max size 4mb, dx3, frame type, trace full fb, extra regs, lo staging, 
+/var/log/messages-20261025:Oct 19 11:39:16 shares kernel: vmwgfx 0000:00:0f.0: [drm] DMA map mode: Caching DMA mappings.
+/var/log/messages-20261025:Oct 19 11:39:16 shares kernel: vmwgfx 0000:00:0f.0: [drm] Legacy memory limits: VRAM = 4096 KiB, FIFO = 256 KiB, surface = 0 KiB
+/var/log/messages-20261025:Oct 19 11:39:16 shares kernel: vmwgfx 0000:00:0f.0: [drm] MOB limits: max mob size = 1048576 KiB, max mob pages = 2097152
+/var/log/messages-20261025:Oct 19 11:39:16 shares kernel: vmwgfx 0000:00:0f.0: [drm] Max GMR ids is 64
+/var/log/messages-20261025:Oct 19 11:39:16 shares kernel: vmwgfx 0000:00:0f.0: [drm] Max number of GMR pages is 65536
+/var/log/messages-20261025:Oct 19 11:39:16 shares kernel: vmwgfx 0000:00:0f.0: [drm] Maximum display memory size is 262144 KiB
+/var/log/messages-20261025:Oct 19 11:39:16 shares kernel: vmwgfx 0000:00:0f.0: [drm] Screen Target display unit initialized
+/var/log/messages-20261025:Oct 19 11:39:16 shares kernel: vmwgfx 0000:00:0f.0: [drm] Fifo max 0x00040000 min 0x00001000 cap 0x0000077f
+/var/log/messages-20261025:Oct 19 11:39:16 shares kernel: vmwgfx 0000:00:0f.0: [drm] Using command buffers with DMA pool.
+/var/log/messages-20261025:Oct 19 11:39:16 shares kernel: vmwgfx 0000:00:0f.0: [drm] Available shader model: Legacy.
+/var/log/messages-20261025:Oct 19 11:39:16 shares kernel: [drm] Initialized vmwgfx 2.21.0 for 0000:00:0f.0 on minor 0
+/var/log/messages-20261025:Oct 19 11:39:16 shares kernel: fbcon: vmwgfxdrmfb (fb0) is primary device
+/var/log/messages-20261025:Oct 19 11:39:16 shares kernel: vmwgfx 0000:00:0f.0: [drm] fb0: vmwgfxdrmfb frame buffer device
+/var/log/messages-20261025:Oct 19 11:39:27 shares kernel: vmw_vmci 0000:00:07.7: enabling device (0000 -> 0003)
+/var/log/messages-20261025:Oct 19 11:39:27 shares kernel: vmw_vmci 0000:00:07.7: MMIO register access is available
+/var/log/messages-20261025:Oct 19 11:39:27 shares kernel: vmw_vmci 0000:00:07.7: Using capabilities 0x3c
+--- last 15 lines before each reboot (messages)
+2589:Oct 25 01:02:03 shares rsyslogd[1175]: [origin software="rsyslogd" swVersion="8.2510.0-2.el9_8.2" x-pid="1175" x-info="https://www.rsyslog.com"] start
+15534:Oct 26 07:58:26 shares rsyslogd[1234]: [origin software="rsyslogd" swVersion="8.2510.0-2.el9_8.2" x-pid="1234" x-info="https://www.rsyslog.com"] start
+--- NFS
+/data/nfs     	192.168.110.0/24(sync,wdelay,hide,no_subtree_check,sec=sys,rw,secure,no_root_squash,no_all_squash)
+Total: 172
+TCP:   24 (estab 11, closed 1, orphaned 0, timewait 1)
+
+--- top memory
+    PID COMMAND         %MEM   RSS
+   1051 firewalld        1.1 41928
+   1195 tuned            0.7 27644
+   1169 polkitd          0.6 24492
+   1168 NetworkManager   0.5 20744
+   2759 sssd_kcm         0.5 19588

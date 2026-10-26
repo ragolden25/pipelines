@@ -1,0 +1,3 @@
+journalctl --since "2026-10-26 04:55" --until "2026-10-26 06:30" --no-pager | grep -v 'run-parts' | head -80
+echo ----; journalctl --since "2026-10-25 14:55" --until "2026-10-25 15:45" --no-pager | head -40
+echo ----; ls -lt /var/log/*.log | head; grep -nE 'LOG|tee|>>' /root/bin/mmdebstrap-orchestrator.sh | head -15

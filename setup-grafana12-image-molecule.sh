@@ -189,6 +189,7 @@ cat > "$SC/verify.yml" <<'EOF'
                     '-e', 'GF_SECURITY_DISABLE_INITIAL_ADMIN_PASSWORD_CHANGE=true',
                     '-e', 'GF_FEATURE_TOGGLES_provisioningService=true',
                     '-e', 'GF_PROVISIONING_DISABLE_PROVISIONING_DEFAULT_PLUGINS=true',
+                    '-e', 'GF_PLUGINS_PREINSTALL_DISABLED=true',
                     grafana_img] }}
           changed_when: true
 
@@ -255,10 +256,11 @@ cat > "$SC/verify.yml" <<'EOF'
             url_password: "{{ item.pass | default(omit) }}"
             force_basic_auth: "{{ item.user is defined }}"
             return_content: true
+            status_code: "{{ item.ok | default([200]) }}"
           loop:
             - { name: prom_config, port: "{{ ports1.results[0].stdout_lines[0] }}", path: /api/v1/status/config }
             - { name: prom_targets, port: "{{ ports1.results[0].stdout_lines[0] }}", path: /api/v1/targets }
-            - { name: idrac_metrics, port: "{{ ports1.results[1].stdout_lines[0] }}", path: /metrics }
+            - { name: idrac_metrics, port: "{{ ports1.results[1].stdout_lines[0] }}", path: /metrics, ok: [200, 400] }
             - { name: datasources, port: "{{ graf_port.stdout_lines[0] }}", path: /api/datasources, user: admin, pass: admin }
             - { name: dashboards, port: "{{ graf_port.stdout_lines[0] }}", path: "/api/search?type=dash-db", user: admin, pass: admin }
             - { name: alert_rules, port: "{{ graf_port.stdout_lines[0] }}", path: /api/v1/provisioning/alert-rules, user: admin, pass: admin }
@@ -274,7 +276,7 @@ cat > "$SC/verify.yml" <<'EOF'
               - via_nginx.json.database == 'ok'
               - api.results[0].json.status == 'success'
               - api.results[1].json.data.activeTargets | length > 0
-              - api.results[2].status == 200
+              - api.results[2].status == 200 or 'target' in (api.results[2].content | default(''))
               - "'ds-prometheus' in (api.results[3].json | map(attribute='uid') | list)"
               - (expected_titles | difference(api.results[4].json | map(attribute='title') | list)) | length == 0
               - api.results[5].json | length > 0

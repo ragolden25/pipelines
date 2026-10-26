@@ -1,0 +1,171 @@
+== compose
+networks:
+  grafana_net:
+    name: grafana_net
+    driver: bridge
+
+services:
+
+  grafana:
+    image: "nucleus/grafana:12.4.11"
+    container_name: grafana
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+      - seccomp=/usr/share/containers/seccomp.json
+    read_only: true
+    cap_drop:
+      - ALL
+    ports:
+      - "127.0.0.1:3000:3000"
+    networks:
+      grafana_net:
+        aliases:
+          - grafana
+
+    volumes:
+      # Explicit configuration file mount
+      - "/var/lib/containers/grafana/config/grafana.ini:/etc/grafana/grafana.ini:ro"
+
+      # FIX: was four separate mounts (one per provisioning subdirectory,
+      # plus provisioning/api left over from the API approach). Classic
+      # Grafana provisioning doesn't need that — point GF_PATHS_PROVISIONING
+      # at one directory and Grafana walks the whole tree itself
+      # (datasources/, dashboards/, alerting/, plugins/, access-control/).
+      # One mount for the whole provisioning/ tree does the same job with
+      # less to keep in sync: add a new provisioning subdirectory later
+      # and it's picked up automatically, no compose edit required.
+      - "/var/lib/containers/grafana/provisioning:/etc/grafana/provisioning:ro"
+
+      # Explicit unified storage mount (Houses the backend SQLite database for API objects)
+      - "/var/lib/containers/grafana/data:/usr/share/grafana/data:rw"
+
+    tmpfs:
+      - /usr/share/grafana/data/log
+      - /usr/share/grafana/data/plugins
+      - /usr/share/grafana/data/plugins-bundled
+
+    environment:
+      - GF_PATHS_CONFIG=/etc/grafana/grafana.ini
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_DISABLE_INITIAL_ADMIN_PASSWORD_CHANGE=true
+      - GF_FEATURE_TOGGLES_provisioningService=true
+      - GF_PROVISIONING_DISABLE_PROVISIONING_DEFAULT_PLUGINS=true
+
+    healthcheck:
+      test: ["CMD", "true"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+    # Confirmed working in production: `true` is present in the hardened
+    # image (coreutils survives the strip list), and this condition is
+    # deliberate — it holds grafana off until prometheus is fully up so
+    # the datasource doesn't get marked unreliable/invalid at grafana's
+    # own startup, which would otherwise leave scraped data missing from
+    # dashboards until the next reconnect.
+    depends_on:
+      prometheus:
+        condition: service_healthy
+
+  prometheus:
+    image: "nucleus/prometheus:3.14.0"
+    container_name: prometheus
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+      - seccomp=/usr/share/containers/seccomp.json
+    read_only: true
+    cap_drop:
+      - ALL
+    ports:
+      - "127.0.0.1:9191:9191"
+    networks:
+      grafana_net:
+        aliases:
+          - prometheus
+    volumes:
+      - "/var/lib/containers/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro"
+      - "/var/lib/containers/prometheus/data:/var/prometheus:rw"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/var/prometheus"
+      - "--web.listen-address=:9191"
+
+    healthcheck:
+      test: ["CMD", "true"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  nginx:
+    image: "nucleus/nginx:1.31.6"
+    container_name: nginx
+    restart: unless-stopped
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp=/usr/share/containers/seccomp.json
+    read_only: true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    tmpfs:
+      - /run:uid=65532,gid=65532,mode=755
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      grafana_net:
+        aliases:
+          - nginx
+    volumes:
+      - "/var/lib/containers/nginx/nginx.conf:/etc/nginx/nginx.conf:ro"
+      - "/var/lib/containers/nginx/mime.types:/etc/nginx/mime.types:ro"
+      - "/var/lib/containers/nginx/options-ssl-nginx.conf:/etc/nginx/options-ssl-nginx.conf:ro"
+      - "/var/lib/containers/nginx/ssl-dhparams.pem:/etc/nginx/ssl-dhparams.pem:ro"
+      - "/var/lib/containers/nginx/certs:/etc/nginx/certs:ro"
+      - "/var/lib/containers/nginx/conf.d:/etc/nginx/conf.d:ro"
+      - "/var/lib/containers/nginx/nsswitch.conf:/etc/nsswitch.conf:ro"
+      - "/var/lib/containers/nginx/cache:/var/cache/nginx:rw"
+      - "/var/lib/containers/nginx/log:/var/log/nginx:rw"
+
+    healthcheck:
+      test: ["CMD", "true"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+    depends_on:
+      grafana:
+        condition: service_healthy
+
+  idrac_exporter:
+    image: "nucleus/idrac:2.6.3"
+    container_name: idrac_exporter
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+      - seccomp=/usr/share/containers/seccomp.json
+    read_only: true
+    cap_drop:
+      - ALL
+    ports:
+      - "127.0.0.1:9348:9348"
+    networks:
+      - grafana_net
+    command:
+      - "-config=/etc/prometheus/idrac.yml"
+    volumes:
+      - "/var/lib/containers/idrac/idrac.yml:/etc/prometheus/idrac.yml:ro"
+
+    healthcheck:
+      test: ["CMD", "true"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+== tag
+[{"Config":"blobs/sha256/f02f92692fc53a418e7b9282f8c007c05d576c3e060ced3108e4617d6c08cf34","RepoTags":["weekly/grafana/nucleus/grafana:12.4.13"],"Layers":["blobs/sha256/90357f1f150f62f6179353f550938d9d845fce81dc94f58e9cd212781d445e2e","blobs/sha256/5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"],"LayerSources":{"sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3

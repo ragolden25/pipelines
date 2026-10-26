@@ -1,0 +1,19 @@
+Edits (power the VM off first, then edit the .vmx):
+
+mks.enable3d = "FALSE"
+svga.graphicsMemoryKB = "262144"
+sata0:1.present = "FALSE"
+sound.present = "FALSE"
+sound.autoDetect = "FALSE"
+usb.vbluetooth.startConnected = "FALSE"
+serial0.present = "FALSE"
+msg.autoAnswer = "TRUE"
+
+On shares2, also add numvcpus = "2". msg.autoAnswer makes the VM answer any question dialog automatically, which is what an unattended start needs.
+
+For vm-watchdog.ps1, set $vms to the real paths. For shares I’m assuming the file is G:\shares.vmx, since you gave the folder as G:\:
+
+"G:\shares.vmx"
+"G:\Virtual Machines\shares2\shares2.vmx"
+
+Each host’s watchdog should list only the VM that runs on that host.

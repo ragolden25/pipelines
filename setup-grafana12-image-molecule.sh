@@ -2,7 +2,7 @@
 # setup-grafana12-image-molecule.sh - run as the ansible user on ansible-forge.
 # Creates the Molecule scenario "grafana12-image" in configure_grafana_stack and its runner.
 # The scenario stages the role's config (same converge as grafana12), then starts the newest saved weekly
-# Prometheus and Grafana images on that config, set up like docker-compose.yml, and checks Grafana through its API.
+# Prometheus, iDRAC exporter, Grafana and nginx images on that config, set up like docker-compose.yml, and checks each one.
 set -euo pipefail
 ROLE=/opt/ansible/nucleus/roles/configure_grafana_stack
 SC="$ROLE/molecule/grafana12-image"
@@ -52,7 +52,8 @@ EOF
 cat > "$SC/verify.yml" <<'EOF'
 ---
 # Loads the newest saved weekly images (class from MOL_IMAGE_CLASS: nucleus = hardened, ccop = functional),
-# starts Prometheus and Grafana the way docker-compose.yml does, and checks what Grafana actually loaded.
+# starts the whole stack (Prometheus, iDRAC exporter, Grafana, nginx) the way docker-compose.yml does, on the
+# config the role staged, and checks what each one actually did.
 - name: Verify the weekly images on the staged config
   hosts: localhost
   connection: local
@@ -62,6 +63,13 @@ cat > "$SC/verify.yml" <<'EOF'
     scr: /opt/ansible/molecule/scratch/containers
     files_root: /opt/ansible/files/grafana
     net: mol_grafana_net
+    fqdn: std1.pt69.ccop.dev
+    nginx_scheme: https
+    image_names:
+      - grafana
+      - prometheus
+      - nginx
+      - idrac
     expected_titles:
       - Nucleus Linux Servers
       - Nucleus Windows Servers
@@ -70,17 +78,15 @@ cat > "$SC/verify.yml" <<'EOF'
       url_username: admin
       url_password: admin
   tasks:
-    - name: Find the newest saved Grafana and Prometheus image for this class
+    - name: Find the newest saved image of each component for this class
       ansible.builtin.shell: "ls -t {{ files_root }}/weekly/*/images/{{ cls }}-{{ item }}-*.tar.gz 2>/dev/null | head -n 1"
       args:
         executable: /bin/bash
       changed_when: false
-      loop:
-        - grafana
-        - prometheus
+      loop: "{{ image_names }}"
       register: tars
 
-    - name: Both images must exist
+    - name: All four images must exist
       ansible.builtin.assert:
         that:
           - item.stdout | length > 0
@@ -101,13 +107,15 @@ cat > "$SC/verify.yml" <<'EOF'
       ansible.builtin.set_fact:
         grafana_img: "{{ (loaded.results[0].stdout | regex_search('Loaded image: (\\S+)', '\\1'))[0] }}"
         prom_img: "{{ (loaded.results[1].stdout | regex_search('Loaded image: (\\S+)', '\\1'))[0] }}"
+        nginx_img: "{{ (loaded.results[2].stdout | regex_search('Loaded image: (\\S+)', '\\1'))[0] }}"
+        idrac_img: "{{ (loaded.results[3].stdout | regex_search('Loaded image: (\\S+)', '\\1'))[0] }}"
 
     - name: Use the production seccomp profile if this host has it
       ansible.builtin.stat:
         path: /usr/share/containers/seccomp.json
       register: seccomp
 
-    - name: Run both images and check Grafana
+    - name: Run the stack and check it
       block:
         - name: Test network
           ansible.builtin.command: "docker network create {{ net }}"
@@ -129,14 +137,32 @@ cat > "$SC/verify.yml" <<'EOF'
                     '--web.listen-address=:9191'] }}
           changed_when: true
 
-        - name: Prometheus port
-          ansible.builtin.command: docker port mol-prometheus 9191/tcp
-          register: prom_port
+        - name: Start the iDRAC exporter
+          ansible.builtin.command:
+            argv: >-
+              {{ ['docker', 'run', '-d', '--name', 'mol-idrac', '--network', net,
+                  '--network-alias', 'idrac_exporter', '--read-only', '--cap-drop', 'ALL',
+                  '--security-opt', 'no-new-privileges:true']
+                 + (['--security-opt', 'seccomp=/usr/share/containers/seccomp.json'] if seccomp.stat.exists else [])
+                 + ['-p', '127.0.0.1::9348',
+                    '-v', scr ~ '/idrac/idrac.yml:/etc/prometheus/idrac.yml:ro',
+                    idrac_img,
+                    '-config=/etc/prometheus/idrac.yml'] }}
+          changed_when: true
+
+        - name: Prometheus and exporter ports
+          ansible.builtin.command: "docker port {{ item.c }} {{ item.p }}/tcp"
+          loop:
+            - { c: mol-prometheus, p: 9191 }
+            - { c: mol-idrac, p: 9348 }
+          loop_control:
+            label: "{{ item.c }}"
+          register: ports1
           changed_when: false
 
         - name: Prometheus is ready
           ansible.builtin.uri:
-            url: "http://127.0.0.1:{{ (prom_port.stdout_lines[0] | split(':'))[-1] }}/-/ready"
+            url: "http://127.0.0.1:{{ (ports1.results[0].stdout_lines[0] | split(':'))[-1] }}/-/ready"
           register: prom_ready
           until: prom_ready.status == 200
           retries: 20
@@ -180,43 +206,98 @@ cat > "$SC/verify.yml" <<'EOF'
           retries: 40
           delay: 3
 
-        - name: Ask Grafana what it loaded
+        - name: Start nginx
+          ansible.builtin.command:
+            argv: >-
+              {{ ['docker', 'run', '-d', '--name', 'mol-nginx', '--network', net,
+                  '--network-alias', 'nginx', '--user', '65532:65532', '--read-only',
+                  '--cap-drop', 'ALL', '--cap-add', 'NET_BIND_SERVICE',
+                  '--security-opt', 'no-new-privileges:true']
+                 + (['--security-opt', 'seccomp=/usr/share/containers/seccomp.json'] if seccomp.stat.exists else [])
+                 + ['--tmpfs', '/run:uid=65532,gid=65532,mode=755',
+                    '-p', '127.0.0.1::443', '-p', '127.0.0.1::80',
+                    '-v', scr ~ '/nginx/nginx.conf:/etc/nginx/nginx.conf:ro',
+                    '-v', scr ~ '/nginx/mime.types:/etc/nginx/mime.types:ro',
+                    '-v', scr ~ '/nginx/options-ssl-nginx.conf:/etc/nginx/options-ssl-nginx.conf:ro',
+                    '-v', scr ~ '/nginx/ssl-dhparams.pem:/etc/nginx/ssl-dhparams.pem:ro',
+                    '-v', scr ~ '/nginx/certs:/etc/nginx/certs:ro',
+                    '-v', scr ~ '/nginx/conf.d:/etc/nginx/conf.d:ro',
+                    '-v', scr ~ '/nginx/nsswitch.conf:/etc/nsswitch.conf:ro',
+                    '-v', scr ~ '/nginx/cache:/var/cache/nginx:rw',
+                    '-v', scr ~ '/nginx/log:/var/log/nginx:rw',
+                    nginx_img] }}
+          changed_when: true
+
+        - name: nginx ports
+          ansible.builtin.command: "docker port mol-nginx {{ item }}/tcp"
+          loop:
+            - 443
+            - 80
+          register: ports2
+          changed_when: false
+
+        - name: Reach Grafana through nginx (TLS, certificate and proxy)
           ansible.builtin.uri:
-            url: "http://127.0.0.1:{{ (graf_port.stdout_lines[0] | split(':'))[-1] }}{{ item.path }}"
-            url_username: "{{ auth.url_username }}"
-            url_password: "{{ auth.url_password }}"
-            force_basic_auth: true
+            url: "{{ nginx_scheme }}://127.0.0.1:{{ (ports2.results[0].stdout_lines[0] | split(':'))[-1] }}/api/health"
+            headers:
+              Host: "{{ fqdn }}"
+            validate_certs: false
+            return_content: true
+          register: via_nginx
+          until: via_nginx.status == 200
+          retries: 20
+          delay: 3
+
+        - name: Ask Prometheus, the exporter and Grafana what they loaded
+          ansible.builtin.uri:
+            url: "http://127.0.0.1:{{ (item.port | split(':'))[-1] }}{{ item.path }}"
+            url_username: "{{ item.user | default(omit) }}"
+            url_password: "{{ item.pass | default(omit) }}"
+            force_basic_auth: "{{ item.user is defined }}"
             return_content: true
           loop:
-            - { name: datasources, path: /api/datasources }
-            - { name: dashboards, path: /api/search?type=dash-db }
-            - { name: alert_rules, path: /api/v1/provisioning/alert-rules }
-            - { name: datasource_health, path: /api/datasources/uid/ds-prometheus/health }
+            - { name: prom_config, port: "{{ ports1.results[0].stdout_lines[0] }}", path: /api/v1/status/config }
+            - { name: prom_targets, port: "{{ ports1.results[0].stdout_lines[0] }}", path: /api/v1/targets }
+            - { name: idrac_metrics, port: "{{ ports1.results[1].stdout_lines[0] }}", path: /metrics }
+            - { name: datasources, port: "{{ graf_port.stdout_lines[0] }}", path: /api/datasources, user: admin, pass: admin }
+            - { name: dashboards, port: "{{ graf_port.stdout_lines[0] }}", path: "/api/search?type=dash-db", user: admin, pass: admin }
+            - { name: alert_rules, port: "{{ graf_port.stdout_lines[0] }}", path: /api/v1/provisioning/alert-rules, user: admin, pass: admin }
+            - { name: datasource_health, port: "{{ graf_port.stdout_lines[0] }}", path: /api/datasources/uid/ds-prometheus/health, user: admin, pass: admin }
           loop_control:
             label: "{{ item.name }}"
           register: api
 
-        - name: Grafana loaded the provisioned datasource, dashboards and alert rules
+        - name: Everything came up and loaded its config
           ansible.builtin.assert:
             that:
               - health.json.database == 'ok'
-              - "'ds-prometheus' in (api.results[0].json | map(attribute='uid') | list)"
-              - (expected_titles | difference(api.results[1].json | map(attribute='title') | list)) | length == 0
-              - api.results[2].json | length > 0
-              - api.results[3].json.status == 'OK'
+              - via_nginx.json.database == 'ok'
+              - api.results[0].json.status == 'success'
+              - api.results[1].json.data.activeTargets | length > 0
+              - api.results[2].status == 200
+              - "'ds-prometheus' in (api.results[3].json | map(attribute='uid') | list)"
+              - (expected_titles | difference(api.results[4].json | map(attribute='title') | list)) | length == 0
+              - api.results[5].json | length > 0
+              - api.results[6].json.status == 'OK'
             fail_msg: >-
-              health={{ health.json | default('?') }}
-              datasources={{ api.results[0].json | map(attribute='uid') | list }}
-              dashboards={{ api.results[1].json | map(attribute='title') | list }}
-              alert_rules={{ api.results[2].json | length }}
-              datasource_health={{ api.results[3].json | default('?') }}
+              grafana_health={{ health.json | default('?') }}
+              via_nginx={{ via_nginx.json | default('?') }}
+              prometheus_config={{ api.results[0].json.status | default('?') }}
+              prometheus_targets={{ api.results[1].json.data.activeTargets | length | default('?') }}
+              idrac_metrics_http={{ api.results[2].status | default('?') }}
+              datasources={{ api.results[3].json | map(attribute='uid') | list }}
+              dashboards={{ api.results[4].json | map(attribute='title') | list }}
+              alert_rules={{ api.results[5].json | length }}
+              datasource_health={{ api.results[6].json | default('?') }}
 
       rescue:
         - name: Container logs for the failed run
-          ansible.builtin.shell: "docker logs --tail 60 {{ item }} 2>&1 || true"
+          ansible.builtin.shell: "docker logs --tail 40 {{ item }} 2>&1 || true"
           loop:
             - mol-prometheus
+            - mol-idrac
             - mol-grafana
+            - mol-nginx
           register: logs
           changed_when: false
 
@@ -233,7 +314,7 @@ cat > "$SC/verify.yml" <<'EOF'
 
       always:
         - name: Remove the test containers and network
-          ansible.builtin.shell: "docker rm -f mol-grafana mol-prometheus; docker network rm {{ net }}; true"
+          ansible.builtin.shell: "docker rm -f mol-nginx mol-grafana mol-idrac mol-prometheus; docker network rm {{ net }}; true"
           changed_when: true
 EOF
 

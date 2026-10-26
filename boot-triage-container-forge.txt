@@ -1,0 +1,164 @@
+
+===== host / time =====
+container-forge
+Mon Oct 26 01:45:25 PM EDT 2026
+2026-10-20 07:39:57
+               Local time: Mon 2026-10-26 13:45:25 EDT
+                Time zone: America/New_York (EDT, -0400)
+System clock synchronized: yes
+              NTP service: active
+
+===== reboots (last 8) =====
+reboot   system boot  6.12.95+deb13-am Tue Oct 20 07:33 - still running
+reboot   system boot  6.12.95+deb13-am Wed Sep  2 09:01 - 07:33 (47+22:31)
+shutdown system down  6.12.95+deb13-am Tue Oct 20 07:33 - 07:33  (00:00)
+reboot   system boot  6.12.95+deb13-am Wed Sep  2 07:57 - 09:01  (01:03)
+shutdown system down  6.12.95+deb13-am Wed Sep  2 09:01 - 09:01  (00:00)
+
+===== journal boots (persistent?) =====
+ -5 b9d37fbdbb96402f93ac796d2fcdde10 Thu 2026-07-09 12:38:01 EDT Thu 2026-07-09 12:45:33 EDT
+ -4 9b9ae1c9175b4c9d96cb6db2b6a87611 Thu 2026-07-09 12:45:45 EDT Thu 2026-07-09 13:09:56 EDT
+ -3 67ad6f7548694086955ead934eb8b0fc Thu 2026-07-09 13:10:07 EDT Wed 2026-09-02 07:48:14 EDT
+ -2 185d5aebc42c408eb6a1657511746eb8 Wed 2026-09-02 07:58:01 EDT Wed 2026-09-02 09:01:47 EDT
+ -1 7373b959ab974fc9b34519429dac9a89 Wed 2026-09-02 09:01:59 EDT Tue 2026-10-20 07:33:21 EDT
+  0 c097a8072f774101aa369254d55b7c47 Tue 2026-10-20 07:33:41 EDT Mon 2026-10-26 13:45:25 EDT
+
+===== cron daemon status =====
+active
+inactive
+Mon 2026-10-26 18:12:37 EDT 4h 27min Mon 2026-10-26 10:44:01 EDT   3h 1min ago apt-daily.timer              apt-daily.service
+Tue 2026-10-27 06:04:33 EDT      16h Mon 2026-10-26 06:55:41 EDT        6h ago apt-daily-upgrade.timer      apt-daily-upgrade.service
+
+===== crontabs (root + users) =====
+--- root
+# Edit this file to introduce tasks to be run by cron.
+# 
+# Each task to run has to be defined through a single line
+# indicating with different fields when the task will be run
+# and what command to run for the task
+# 
+# To define the time you can provide concrete values for
+# minute (m), hour (h), day of month (dom), month (mon),
+# and day of week (dow) or use '*' in these fields (for 'any').
+# 
+# Notice that tasks will be started based on the cron's system
+# daemon's notion of time and timezones.
+# 
+# Output of the crontab jobs (including errors) is sent through
+# email to the user the crontab file belongs to (unless redirected).
+# 
+# For example, you can run a backup of all your user accounts
+# at 5 a.m every week with:
+# 0 5 * * 1 tar -zcf /var/backups/home.tgz /home/
+# 
+# For more information see the manual pages of crontab(5) and cron(8)
+# 
+# m h  dom mon dow   command
+# cleanup images everyday
+0 3 * * * /root/bin/image-cleanup.sh >> /var/log/image-cleanup.log 2>&1
+
+# Update this server everyday
+0 4 * * * /root/bin/daily-updates.sh >> /var/log/container-updates.log 2>&1
+
+# Build a fresh baked image every morning at 0500
+0 5 * * * IMAGES="base go node22 node24 postgres18" /root/bin/mmdebstrap-orchestrator.sh
+
+--- ansible
+0 5 * * * /home/ansible/mmdebstrap.sh >> /var/log/mmdebstrap.log 2>&1
+e2scrub_all
+
+===== cron activity Sun-Mon this week (container-forge side) =====
+Oct 23 15:17:01 container-forge CRON[78798]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 23 16:17:01 container-forge CRON[78808]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 23 17:17:01 container-forge CRON[78816]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 23 19:17:01 container-forge CRON[78838]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 23 22:17:01 container-forge CRON[78867]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 23 23:17:01 container-forge CRON[78872]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 24 00:17:01 container-forge CRON[78966]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 24 01:17:01 container-forge CRON[78972]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 24 03:00:01 container-forge CRON[78985]: (root) CMD (/root/bin/image-cleanup.sh >> /var/log/image-cleanup.log 2>&1)
+Oct 24 03:10:01 container-forge CRON[79077]: (root) CMD (test -e /run/systemd/system || SERVICE_MODE=1 /sbin/e2scrub_all -A -r)
+Oct 24 03:17:01 container-forge CRON[79089]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 24 04:00:01 container-forge CRON[79095]: (root) CMD (/root/bin/daily-updates.sh >> /var/log/container-updates.log 2>&1)
+Oct 24 04:17:01 container-forge CRON[79113]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 24 05:00:01 container-forge CRON[79124]: (root) CMD (IMAGES="base go node22 node24 postgres18" /root/bin/mmdebstrap-orchestrator.sh)
+Oct 24 05:17:01 container-forge CRON[83845]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 24 06:17:01 container-forge CRON[83909]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 24 06:25:01 container-forge CRON[83915]: (root) CMD (test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.daily; })
+Oct 24 07:17:01 container-forge CRON[83984]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 24 08:17:01 container-forge CRON[83999]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 24 09:17:01 container-forge CRON[84007]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 24 10:17:01 container-forge CRON[84012]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 24 11:17:01 container-forge CRON[84018]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 24 14:17:01 container-forge CRON[84033]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 24 16:17:01 container-forge CRON[84046]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 24 17:17:01 container-forge CRON[84052]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 24 18:17:01 container-forge CRON[84112]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 24 19:17:01 container-forge CRON[84121]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 24 20:17:01 container-forge CRON[84187]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 24 21:17:01 container-forge CRON[84193]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 24 22:17:01 container-forge CRON[84203]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 25 00:17:01 container-forge CRON[84231]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 25 01:17:01 container-forge CRON[84322]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 25 02:17:01 container-forge CRON[84331]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 25 03:00:01 container-forge CRON[84341]: (root) CMD (/root/bin/image-cleanup.sh >> /var/log/image-cleanup.log 2>&1)
+Oct 25 03:10:01 container-forge CRON[84434]: (root) CMD (test -e /run/systemd/system || SERVICE_MODE=1 /sbin/e2scrub_all -A -r)
+Oct 25 03:17:01 container-forge CRON[84442]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 25 04:00:01 container-forge CRON[84452]: (root) CMD (/root/bin/daily-updates.sh >> /var/log/container-updates.log 2>&1)
+Oct 25 04:17:01 container-forge CRON[84471]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 25 05:00:01 container-forge CRON[84480]: (root) CMD (IMAGES="base go node22 node24 postgres18" /root/bin/mmdebstrap-orchestrator.sh)
+Oct 25 06:25:01 container-forge CRON[89214]: (root) CMD (test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.daily; })
+Oct 25 06:47:01 container-forge CRON[89233]: (root) CMD (test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.weekly; })
+Oct 25 07:17:01 container-forge CRON[89295]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 25 08:17:01 container-forge CRON[89306]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 25 09:17:01 container-forge CRON[89314]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 25 10:17:01 container-forge CRON[89320]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 25 11:17:01 container-forge CRON[89382]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 25 12:17:01 container-forge CRON[89389]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 25 13:17:01 container-forge CRON[89397]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 25 14:17:01 container-forge CRON[89403]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 25 16:17:01 container-forge CRON[89415]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 25 18:17:01 container-forge CRON[89427]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 25 21:17:01 container-forge CRON[89447]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 26 00:17:01 container-forge CRON[89536]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 26 01:17:01 container-forge CRON[89626]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 26 02:17:01 container-forge CRON[89631]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 26 03:00:01 container-forge CRON[89638]: (root) CMD (/root/bin/image-cleanup.sh >> /var/log/image-cleanup.log 2>&1)
+Oct 26 03:10:01 container-forge CRON[89752]: (root) CMD (test -e /run/systemd/system || SERVICE_MODE=1 /sbin/e2scrub_all -A -r)
+Oct 26 03:17:01 container-forge CRON[89758]: (root) CMD (cd / && run-parts --report /etc/cron.hourly)
+Oct 26 04:00:01 container-forge CRON[89769]: (root) CMD (/root/bin/daily-updates.sh >> /var/log/container-updates.log 2>&1)
+Oct 26 05:00:01 container-forge CRON[89795]: (root) CMD (IMAGES="base go node22 node24 postgres18" /root/bin/mmdebstrap-orchestrator.sh)
+
+===== docker =====
+active
+ActiveEnterTimestamp=Tue 2026-10-20 07:33:48 EDT
+
+===== mounts that failed / dependencies at boot =====
+  UNIT LOAD ACTIVE SUB DESCRIPTION
+
+0 loaded units listed.
+
+===== boot-time errors, this boot (first 60) =====
+Oct 20 07:33:41 container-forge systemd-ssh-generator[301]: Failed to query local AF_VSOCK CID: Cannot assign requested address
+Oct 20 07:33:41 container-forge (sd-exec-[293]: /usr/lib/systemd/system-generators/systemd-ssh-generator failed with exit status 1.
+
+===== previous boot, last 15 lines before shutdown =====
+Oct 20 07:33:21 container-forge systemd[1]: Reached target umount.target - Unmount All Filesystems.
+Oct 20 07:33:21 container-forge systemd[1]: Reached target final.target - Late Shutdown Services.
+Oct 20 07:33:21 container-forge systemd[1]: systemd-reboot.service: Deactivated successfully.
+Oct 20 07:33:21 container-forge systemd[1]: Finished systemd-reboot.service - System Reboot.
+Oct 20 07:33:21 container-forge systemd[1]: Reached target reboot.target - System Reboot.
+Oct 20 07:33:21 container-forge systemd[1]: Shutting down.
+Oct 20 07:33:21 container-forge systemd[1]: Using hardware watchdog 'iTCO_wdt', version 2, device /dev/watchdog0
+Oct 20 07:33:21 container-forge systemd[1]: Watchdog running with a hardware timeout of 10min.
+Oct 20 07:33:21 container-forge kernel: watchdog: watchdog0: watchdog did not stop!
+Oct 20 07:33:21 container-forge systemd-shutdown[1]: Using hardware watchdog 'iTCO_wdt', version 2, device /dev/watchdog0
+Oct 20 07:33:21 container-forge systemd-shutdown[1]: Watchdog running with a hardware timeout of 10min.
+Oct 20 07:33:21 container-forge systemd-shutdown[1]: Syncing filesystems and block devices.
+Oct 20 07:33:21 container-forge systemd-shutdown[1]: Sending SIGTERM to remaining processes...
+Oct 20 07:33:21 container-forge systemd-journald[323]: Received SIGTERM from PID 1 (systemd-shutdow).
+Oct 20 07:33:21 container-forge systemd-journald[323]: Journal stopped
+
+===== recent build logs (newest 8 under common locations) =====
+
+Report saved to /root/boot-triage-container-forge.txt

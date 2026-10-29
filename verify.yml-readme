@@ -1,0 +1,4 @@
+cd /opt/ansible/nucleus/roles/configure_grafana_stack/molecule/grafana12-image
+cp verify.yml verify.yml.bak-$(date +%F)
+cp /path/to/downloaded/verify.yml verify.yml
+chown ansible:ansible-admin verify.yml

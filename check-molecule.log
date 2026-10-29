@@ -1,3 +1,21 @@
 tail -30 /opt/ansible/logs/weekly-molecule.log
 ls -lt /opt/ansible/molecule/logs/ | head -5
 tail -60 "$(ls -t /opt/ansible/molecule/logs/grafana12-image-nucleus-*.log | head -1)"
+
+
+My strongest suspect is /opt/ansible/molecule/scans/tmp. Your scans use it as TMPDIR, and Syft, Grype and OpenSCAP unpack each image tarball there while they work. Normally they clean up afterwards, but a scan that’s killed, times out or fails can leave its unpacked copy behind. At several GB per image, across six parallel scans a day plus the weekly builds, leftovers would fill 1 TB quickly. The Molecule tests themselves write only small logs and a scratch folder that’s emptied on every run.
+
+Confirm it with:
+
+du -xh --max-depth=2 /opt/ansible/molecule 2>/dev/null | sort -h | tail -15
+ls -lt /opt/ansible/molecule/scans/tmp | tail -5
+
+
+The second command shows the oldest leftovers. Anything older than a day in a temp directory is debris.
+
+If scans/tmp is the culprit, it’s safe to empty as long as no scan is running at the time. Check first, then clear it:
+
+pgrep -af 'grype|syft|oscap'     # should print nothing
+find /opt/ansible/molecule/scans/tmp -mindepth 1 -delete
+
+du -xh --max-depth=2 /opt/ansible/molecule 2>/dev/null | sort -h | tail -15

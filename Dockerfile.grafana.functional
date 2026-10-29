@@ -3,6 +3,8 @@ FROM container-forge/debian13-slim:latest
 ARG GRAFANA_VERSION
 ENV DEBIAN_FRONTEND=noninteractive
 
+# passwd provides groupadd/useradd for the grafana user below
+# (listed explicitly in case the slim base leaves it out).
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         ca-certificates \
@@ -10,8 +12,14 @@ RUN apt-get update && \
         libssl3 \
         tzdata \
         libc6 \
-        libstdc++6 && \
+        libstdc++6 \
+        passwd && \
     rm -rf /var/lib/apt/lists/*
+
+# Named user/group for UID/GID 65532 (same IDs as the hardened image),
+# so ownership, ps and whoami show "grafana" instead of a bare number.
+RUN groupadd -g 65532 grafana && \
+    useradd -u 65532 -g 65532 -M -d /usr/share/grafana -s /usr/sbin/nologin grafana
 
 # Required directories
 RUN mkdir -p \
@@ -43,10 +51,11 @@ COPY staged/public /usr/share/grafana/public
 # volume mounts, not baked into the image — nothing to create here.
 RUN chmod 0755 /usr/local/bin/grafana /usr/local/bin/grafana-cli /usr/local/bin/grafana-server
 
-# Deliberately runs as root: this is the debug/testing image, kept
-# simple to exec into (install packages, poke at permissions, etc.)
-# without chasing UID/GID ownership issues first. The hardened image
-# is the one that runs as 65532.
+# Runs as grafana (65532) like the hardened image: the role stages config/data
+# owned by 65532 and docker-compose drops ALL capabilities, so root can't write
+# there. This is still the debug/testing image — for a root shell to install
+# packages or poke at permissions: docker exec -u 0 -it grafana bash
+USER 65532:65532
 WORKDIR /usr/share/grafana
 
 EXPOSE 3000

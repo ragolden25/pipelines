@@ -1,0 +1,620 @@
+Revisions to Molecule weekly tests.
+Names that better describe what was tested.
+
+- ccop images
+- nucleus images
+- deployment role
+
+
+1.   grep -rl pipeline_weekly_molecule_status /opt/ansible /home/ansible/scripts /root/bin 2>/dev/null
+
+# play_weekly_molecule.sh
+#!/bin/bash
+# play_weekly_molecule.sh - run the Grafana Molecule scenarios after the weekly image builds.
+#
+# Save as /opt/ansible/nucleus/playbooks/play_weekly_molecule.sh (owner ansible, chmod 755), then as ansible:
+# play_weekly_molecule.sh --install-cron adds the Thursday 04:00 crontab line (idempotent)
+# play_weekly_molecule.sh run it now (waits if the weekly builds are still running)
+#
+# Runs, in order: grafana12 (role config) -> grafana12-image nucleus -> grafana12-image ccop
+# Reports each to the pipeline dashboard: emit_event.sh check molecule-<name> success|fail "" 604800
+# Also writes $TEXTFILE_DIR/pipeline_weekly_molecule.prom for the Nucleus Pipelines Status dashboard.
+# Exit status 0 only if every scenario passed.
+
+set -u
+RUN_DIR="${RUN_DIR:-/opt/ansible/molecule}"
+LOG="${LOG:-/opt/ansible/logs/weekly-molecule.log}"
+EMIT="${EMIT:-/usr/local/bin/emit_event.sh}"
+TEXTFILE_DIR="${TEXTFILE_DIR:-/var/lib/node_exporter/textfile}"
+CLASSES="${MOL_CLASSES:-nucleus ccop}" # image classes to test
+WAIT_MAX="${WAIT_MAX:-10800}" # give up waiting for the builds after 3 h
+CRON_LINE='0 4 * * 4 /opt/ansible/nucleus/playbooks/play_weekly_molecule.sh >> /opt/ansible/logs/weekly-molecule-cron.log 2>&1'
+
+if [ "${1:-}" = "--install-cron" ]; then
+  if crontab -l 2>/dev/null | grep -qF 'play_weekly_molecule.sh'; then
+    echo "crontab already has play_weekly_molecule.sh - left alone"
+  else
+    crontab -l > "$HOME/crontab.bak-$(date +%Y%m%d-%H%M)" 2>/dev/null
+    { crontab -l 2>/dev/null; printf '\n# weekly molecule tests (after the weekly image builds)\n%s\n' "$CRON_LINE"; } | crontab - \
+      && echo "added: $CRON_LINE"
+  fi
+  exit 0
+fi
+
+mkdir -p "$(dirname "$LOG")"
+exec >>"$LOG" 2>&1
+log() { echo "$(date -Iseconds) $*"; }
+
+# One run at a time (a manual run and the cron run must not overlap).
+exec 9>/tmp/weekly-molecule.lock
+flock -n 9 || { log "another weekly molecule run is active - exiting"; exit 1; }
+
+log "=== weekly molecule start ==="
+
+# Wait for the weekly builds to finish (they own the Docker daemon and the scratch dirs).
+waited=0
+BUILDS_RE="${BUILDS_RE:-^(/bin/|/usr/bin/)?(ba)?sh( -c)? +/opt/ansible/nucleus/playbooks/play_weekly_builds\.sh}"
+while pgrep -f "$BUILDS_RE" >/dev/null 2>&1; do
+  [ "$waited" -ge "$WAIT_MAX" ] && { log "weekly builds still running after ${WAIT_MAX}s - giving up"; "$EMIT" check molecule-weekly fail "" 604800 >/dev/null 2>&1 || true; exit 1; }
+  [ $((waited % 600)) -eq 0 ] && log "weekly builds still running - waiting"
+  sleep 60; waited=$((waited + 60))
+done
+
+rc=0
+METRICS=""
+run() { # run <event-name> <scenario> <class> <command...>
+  local name=$1 scen=$2 cls=$3; shift 3
+  local t0 t1 ok=0 lbl
+  t0=$(date +%s); log "--- $name: start ---"
+  if "$@"; then
+    ok=1; log "--- $name: PASSED ---"; "$EMIT" check "molecule-$name" success "" 604800 >/dev/null 2>&1 || true
+  else
+    log "--- $name: FAILED (see /opt/ansible/molecule/logs/) ---"; "$EMIT" check "molecule-$name" fail "" 604800 >/dev/null 2>&1 || true
+    rc=1
+  fi
+  t1=$(date +%s)
+  lbl="stack=\"grafana\",test=\"$scen\""
+  METRICS="$METRICS$(printf 'pipeline_weekly_molecule_status{%s} %s\npipeline_weekly_molecule_timestamp_seconds{%s} %s\npipeline_weekly_molecule_duration_seconds{%s} %s\n' "$lbl" "$ok" "$lbl" "$t1" "$lbl" "$((t1 - t0))")
+"
+}
+
+run grafana12 role-config - "$RUN_DIR/run-grafana12.sh"
+for c in $CLASSES; do
+  run "grafana12-image-$c" "image-$c" - "$RUN_DIR/run-grafana12-image.sh" "$c"
+done
+
+# Publish to the dashboard through node_exporter's textfile collector (same place the weekly build/CIS metrics go).
+if [ -d "$TEXTFILE_DIR" ] && [ -w "$TEXTFILE_DIR" ]; then
+  tmp=$(mktemp "$TEXTFILE_DIR/.pipeline_weekly_molecule.XXXXXX")
+  {
+    echo '# HELP pipeline_weekly_molecule_status Weekly Molecule test: 1 passed, 0 failed.'
+    echo '# TYPE pipeline_weekly_molecule_status gauge'
+    echo '# HELP pipeline_weekly_molecule_timestamp_seconds Unix time this Molecule scenario finished.'
+    echo '# TYPE pipeline_weekly_molecule_timestamp_seconds gauge'
+    echo '# HELP pipeline_weekly_molecule_duration_seconds Run time of this Molecule scenario.'
+    echo '# TYPE pipeline_weekly_molecule_duration_seconds gauge'
+    printf '%s' "$METRICS" | sort -s -t'{' -k1,1
+  } > "$tmp" && chmod 0644 "$tmp" && mv -f "$tmp" "$TEXTFILE_DIR/pipeline_weekly_molecule.prom" \
+    && log "metrics written to $TEXTFILE_DIR/pipeline_weekly_molecule.prom"
+else
+  log "WARNING: $TEXTFILE_DIR missing or not writable by $(id -un) - no metrics written (dashboard events were still sent)"
+fi
+
+log "=== weekly molecule done (rc=$rc) ==="
+exit $rc
+
+
+
+2. The full scenario directory tree and there isn't a role specific to molecule, I think it uses weekly build tasks, I'm not sure.
+
+This is a ton of files!
+
+# emit_event.sh
+#!/usr/bin/env bash
+# =====================================================================
+# emit_event.sh -- report a pipeline step's result to Prometheus via the
+# node_exporter textfile collector.
+#
+# Usage:
+#   emit_event.sh <type> <target> <success|fail> [version] [interval_seconds]
+#
+#   type      build | sync | scan | sign | stage | deploy | repo
+#   target    what it was about: debian13-go, nucleus-nginx, grafana, ...
+#   status    success | fail
+#   version   optional: image tag/digest, package version, ...
+#   interval  optional: how often this job is expected to run, in seconds
+#             (86400 daily, 604800 weekly). Lets the dashboard flag stale jobs.
+#
+# One file per (type,target), written atomically, so jobs never clobber
+# each other. Never fails the calling script: errors here are swallowed.
+#
+# Typical use inside a pipeline script:
+#   trap 'rc=$?; emit_event.sh build debian13-go "$([[ $rc -eq 0 ]] && echo success || echo fail)" "$TAG" 86400' EXIT
+# =====================================================================
+
+TEXTFILE_DIR="${TEXTFILE_DIR:-/var/lib/node_exporter/textfile}"
+
+main() {
+  local type="${1:-}" target="${2:-}" status="${3:-}" version="${4:-}" interval="${5:-0}"
+
+  if [[ -z "$type" || -z "$target" || ( "$status" != "success" && "$status" != "fail" ) ]]; then
+    echo "usage: emit_event.sh <type> <target> <success|fail> [version] [interval_seconds]" >&2
+    return 2
+  fi
+  [[ "$interval" =~ ^[0-9]+$ ]] || interval=0
+
+  # Keep label values and the filename safe.
+  clean() { printf '%s' "$1" | tr -c 'A-Za-z0-9._:/+-' '_'; }
+  type="$(clean "$type")"; target="$(clean "$target")"; version="$(clean "$version")"
+  local host; host="$(hostname -s 2>/dev/null || echo unknown)"
+  local labels="type=\"${type}\",target=\"${target}\",host=\"${host}\""
+
+  local fname; fname="pipeline_$(printf '%s_%s' "$type" "$target" | tr -c 'A-Za-z0-9_' '_').prom"
+  local out="${TEXTFILE_DIR}/${fname}"
+  local now; now="$(date +%s)"
+  local value=0; [[ "$status" == "success" ]] && value=1
+
+  # On failure, keep the previous last-success time so the dashboard can
+  # show "last good build was N days ago".
+  local last_success=0
+  if [[ $value -eq 1 ]]; then
+    last_success="$now"
+  elif [[ -r "$out" ]]; then
+    last_success="$(awk '/^pipeline_last_success_timestamp_seconds\{/ {print $NF}' "$out" | head -n1)"
+    [[ "$last_success" =~ ^[0-9]+$ ]] || last_success=0
+  fi
+
+  mkdir -p "$TEXTFILE_DIR" || return 1
+  local tmp; tmp="$(mktemp "${TEXTFILE_DIR}/.${fname}.XXXXXX")" || return 1
+
+  cat > "$tmp" <<EOF
+# HELP pipeline_last_status 1 if the last run succeeded, 0 if it failed.
+# TYPE pipeline_last_status gauge
+pipeline_last_status{${labels}} ${value}
+# HELP pipeline_last_run_timestamp_seconds Unix time of the last run (success or fail).
+# TYPE pipeline_last_run_timestamp_seconds gauge
+pipeline_last_run_timestamp_seconds{${labels}} ${now}
+# HELP pipeline_last_success_timestamp_seconds Unix time of the last successful run (0 = never seen).
+# TYPE pipeline_last_success_timestamp_seconds gauge
+pipeline_last_success_timestamp_seconds{${labels}} ${last_success}
+# HELP pipeline_expected_interval_seconds How often this job is expected to run (0 = unspecified).
+# TYPE pipeline_expected_interval_seconds gauge
+pipeline_expected_interval_seconds{${labels}} ${interval}
+# HELP pipeline_info Version/tag/digest handled by the last run.
+# TYPE pipeline_info gauge
+pipeline_info{${labels},version="${version}"} 1
+EOF
+
+  chmod 0644 "$tmp"
+  mv -f "$tmp" "$out"
+}
+
+# Never break the calling pipeline: report problems on stderr but exit 0,
+# except for usage errors.
+main "$@"
+rc=$?
+[[ $rc -eq 2 ]] && exit 2
+[[ $rc -ne 0 ]] && echo "emit_event.sh: could not write metrics (rc=$rc)" >&2
+exit 0
+
+
+Rather than gathering a ton of scripts and task files, how about you write a script to find the information that you seek?
+
+
+# run-grafana12.sh
+#!/bin/bash
+# run-grafana12.sh - run the grafana12 Molecule scenario; log in /opt/ansible/molecule/logs
+source /opt/ansible/molecule/venv/bin/activate
+export XDG_CACHE_HOME=/opt/ansible/molecule/cache
+cd /opt/ansible/nucleus/roles/configure_grafana_stack || exit 1
+LOG=/opt/ansible/molecule/logs/grafana12-$(date +%F-%H%M).log
+molecule test -s grafana12 2>&1 | tee "$LOG"
+echo "log: $LOG"
+
+
+# run-grafana12-image.sh
+#!/bin/bash
+# run-grafana12-image.sh [nucleus|ccop] - image test of the weekly Grafana + Prometheus images (default: nucleus)
+export MOL_IMAGE_CLASS="${1:-nucleus}"
+source /opt/ansible/molecule/venv/bin/activate
+export XDG_CACHE_HOME=/opt/ansible/molecule/cache
+SCR=/opt/ansible/molecule/scratch/containers
+mkdir -p "$SCR"
+# the folder is written by containers (uid 65532), so clean it with a container too
+clean() { docker run --rm -v "$SCR":/s "${MOL_BASE_IMAGE:-debian:trixie}" sh -c 'rm -rf /s/* /s/.[!.]* 2>/dev/null; true'; }
+clean
+cd /opt/ansible/nucleus/roles/configure_grafana_stack || exit 1
+LOG=/opt/ansible/molecule/logs/grafana12-image-$MOL_IMAGE_CLASS-$(date +%F-%H%M).log
+molecule test -s grafana12-image 2>&1 | tee "$LOG"
+rc=${PIPESTATUS[0]}
+clean
+echo "log: $LOG (exit $rc)"
+exit $rc
+
+
+Grafana
+
+# docker-compose.yml.j2
+networks:
+  grafana_net:
+    name: grafana_net
+    driver: bridge
+
+services:
+
+  grafana:
+    image: "{{ grafana_image }}"
+    container_name: grafana
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+      - seccomp=/usr/share/containers/seccomp.json
+    read_only: true
+    cap_drop:
+      - ALL
+    ports:
+      - "127.0.0.1:3000:3000"
+    networks:
+      grafana_net:
+        aliases:
+          - grafana
+
+    volumes:
+      # Explicit configuration file mount
+      - "/var/lib/containers/grafana/config/grafana.ini:/etc/grafana/grafana.ini:ro"
+
+      # FIX: was four separate mounts (one per provisioning subdirectory,
+      # plus provisioning/api left over from the API approach). Classic
+      # Grafana provisioning doesn't need that — point GF_PATHS_PROVISIONING
+      # at one directory and Grafana walks the whole tree itself
+      # (datasources/, dashboards/, alerting/, plugins/, access-control/).
+      # One mount for the whole provisioning/ tree does the same job with
+      # less to keep in sync: add a new provisioning subdirectory later
+      # and it's picked up automatically, no compose edit required.
+      - "/var/lib/containers/grafana/provisioning:/etc/grafana/provisioning:ro"
+
+      # Explicit unified storage mount (Houses the backend SQLite database for API objects)
+      - "/var/lib/containers/grafana/data:/usr/share/grafana/data:rw"
+
+    tmpfs:
+      - /usr/share/grafana/data/log
+      - /usr/share/grafana/data/plugins
+      - /usr/share/grafana/data/plugins-bundled
+
+    environment:
+      - GF_PATHS_CONFIG=/etc/grafana/grafana.ini
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      - GF_SECURITY_ADMIN_USER={{ grafana_admin_user }}
+      - GF_SECURITY_ADMIN_PASSWORD={{ grafana_admin_password }}
+      - GF_SECURITY_DISABLE_INITIAL_ADMIN_PASSWORD_CHANGE=true
+      - GF_FEATURE_TOGGLES_provisioningService=true
+      - GF_PROVISIONING_DISABLE_PROVISIONING_DEFAULT_PLUGINS=true
+
+    healthcheck:
+      test: ["CMD", "true"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+    # Confirmed working in production: `true` is present in the hardened
+    # image (coreutils survives the strip list), and this condition is
+    # deliberate — it holds grafana off until prometheus is fully up so
+    # the datasource doesn't get marked unreliable/invalid at grafana's
+    # own startup, which would otherwise leave scraped data missing from
+    # dashboards until the next reconnect.
+    depends_on:
+      prometheus:
+        condition: service_healthy
+
+  prometheus:
+    image: "{{ prometheus_image }}"
+    container_name: prometheus
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+      - seccomp=/usr/share/containers/seccomp.json
+    read_only: true
+    cap_drop:
+      - ALL
+    ports:
+      - "127.0.0.1:9191:9191"
+    networks:
+      grafana_net:
+        aliases:
+          - prometheus
+    volumes:
+      - "/var/lib/containers/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro"
+      - "/var/lib/containers/prometheus/data:/var/prometheus:rw"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/var/prometheus"
+      - "--web.listen-address=:9191"
+
+    healthcheck:
+      test: ["CMD", "true"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  nginx:
+    image: "{{ nginx_image }}"
+    container_name: nginx
+    restart: unless-stopped
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp=/usr/share/containers/seccomp.json
+    read_only: true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    tmpfs:
+      - /run:uid=65532,gid=65532,mode=755
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      grafana_net:
+        aliases:
+          - nginx
+    volumes:
+      - "/var/lib/containers/nginx/nginx.conf:/etc/nginx/nginx.conf:ro"
+      - "/var/lib/containers/nginx/mime.types:/etc/nginx/mime.types:ro"
+      - "/var/lib/containers/nginx/options-ssl-nginx.conf:/etc/nginx/options-ssl-nginx.conf:ro"
+      - "/var/lib/containers/nginx/ssl-dhparams.pem:/etc/nginx/ssl-dhparams.pem:ro"
+      - "/var/lib/containers/nginx/certs:/etc/nginx/certs:ro"
+      - "/var/lib/containers/nginx/conf.d:/etc/nginx/conf.d:ro"
+      - "/var/lib/containers/nginx/nsswitch.conf:/etc/nsswitch.conf:ro"
+      - "/var/lib/containers/nginx/cache:/var/cache/nginx:rw"
+      - "/var/lib/containers/nginx/log:/var/log/nginx:rw"
+
+    healthcheck:
+      test: ["CMD", "true"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+    depends_on:
+      grafana:
+        condition: service_healthy
+
+  idrac_exporter:
+    image: "{{ idrac_image | default('nucleus/idrac:2.6.3') }}"
+    container_name: idrac_exporter
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+      - seccomp=/usr/share/containers/seccomp.json
+    read_only: true
+    cap_drop:
+      - ALL
+    ports:
+      - "127.0.0.1:9348:9348"
+    networks:
+      - grafana_net
+    command:
+      - "-config=/etc/prometheus/idrac.yml"
+    volumes:
+      - "/var/lib/containers/idrac/idrac.yml:/etc/prometheus/idrac.yml:ro"
+
+    healthcheck:
+      test: ["CMD", "true"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+I couldn't locate a versions.env for the weekly files in /opt/ansible/files/grafana/weekly. I got you a list of the image files was the best I can do for now, as they have the versions in the names.
+
+[root@ansible-forge images]# ll
+total 1143168
+-rw-r--r--. 1 ansible ansible 329624152 Oct 29 02:03 ccop-grafana-12.4.13.tar.gz
+-rw-r--r--. 1 ansible ansible  85082723 Oct 29 02:01 ccop-idrac-2.6.3.tar.gz
+-rw-r--r--. 1 ansible ansible  76822229 Oct 29 02:01 ccop-nginx-1.31.8.tar.gz
+-rw-r--r--. 1 ansible ansible 299087606 Oct 29 02:02 ccop-prometheus-3.15.1.tar.gz
+-rw-r--r--. 1 ansible ansible 178533878 Oct 29 02:04 nucleus-grafana-12.4.13.tar.gz
+-rw-r--r--. 1 ansible ansible  32838873 Oct 29 02:01 nucleus-idrac-2.6.3.tar.gz
+-rw-r--r--. 1 ansible ansible  28765508 Oct 29 02:01 nucleus-nginx-1.31.8.tar.gz
+-rw-r--r--. 1 ansible ansible 139831859 Oct 29 02:03 nucleus-prometheus-3.15.1.tar.gz
+
+Guacamole
+
+# docker-compose.yml.j2
+services:
+
+  guacd:
+    image: nucleus/guacd:{{ GUACD_VERSION }}
+    container_name: guacd
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:4822:4822"
+    volumes:
+      - /var/lib/containers/fonts:/usr/share/fonts/truetype/custom:Z
+      - /var/lib/containers/guacamole:/etc/guacamole:Z
+    networks:
+      - guacnet
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+      - seccomp=/usr/share/containers/seccomp.json
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256m
+        reservations:
+          cpus: "0.10"
+          memory: 64m
+
+  postgres:
+    image: nucleus/postgres:{{ POSTGRES_VERSION }}
+    container_name: guac-db
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:{{ postgres_port }}:5432"
+    environment:
+      POSTGRES_USER: guacuser
+      POSTGRES_PASSWORD: guacpass
+      POSTGRES_DB: guacamole_db
+    command: >
+      -c config_file=/var/lib/containers/postgres/postgresql.conf
+      -c hba_file=/var/lib/containers/postgres/pg_hba.conf
+    volumes:
+      - guac-db-data:/var/lib/postgresql/18/data
+      - /var/lib/containers/postgres:/var/lib/containers/postgres:ro
+    networks:
+      - guacnet
+    security_opt:
+      - no-new-privileges:true
+      - seccomp=/usr/share/containers/seccomp.json
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 1g
+        reservations:
+          cpus: "0.10"
+          memory: 256m
+
+  guacamole:
+    image: nucleus/guacamole:{{ GUACAMOLE_VERSION }}
+    container_name: guacamole
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:{{ guacamole_port }}:8080"
+    volumes:
+      - /var/lib/containers/guacamole/extensions:/usr/local/tomcat/.guacamole/extensions
+      - /var/lib/containers/guacamole/lib:/usr/local/tomcat/.guacamole/lib
+      - /var/lib/containers/guacamole/guacamole.properties:/usr/local/tomcat/.guacamole/guacamole.properties:ro
+    depends_on:
+      - guacd
+      - postgres
+    environment:
+      GUACD_HOSTNAME: guacd
+      POSTGRESQL_HOSTNAME: postgres
+      POSTGRESQL_DATABASE: {{ guac_db_name }}
+      POSTGRESQL_USERNAME: {{ guac_db_user }}
+      POSTGRESQL_PASSWORD: {{ guac_db_pass }}
+      REMOTE_IP_VALVE_ENABLED: 'true'
+      REMOTE_IP_VALVE_REMOTE_IP_HEADER: X-Forwarded-For
+      REMOTE_IP_VALVE_PROTOCOL_HEADER: X-Forwarded-Proto
+    networks:
+      - guacnet
+    security_opt:
+      - no-new-privileges:true
+      - seccomp=/usr/share/containers/seccomp.json
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1g
+        reservations:
+          cpus: "0.25"
+          memory: 256m
+
+  nginx:
+    image: nucleus/nginx:{{ NGINX_VERSION }}
+    container_name: nginx
+    restart: unless-stopped
+
+    user: "65532:65532"
+
+    ports:
+      - "443:443"
+
+    volumes:
+      - /var/lib/containers/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - /var/lib/containers/nginx/mime.types:/etc/nginx/mime.types
+      - /var/lib/containers/nginx/ssl-dhparams.pem:/etc/nginx/ssl-dhparams.pem
+      - /var/lib/containers/nginx/conf.d:/etc/nginx/conf.d:ro
+      - /var/lib/containers/nginx/certs:/etc/nginx/certs:ro
+
+      # Hardened temp dirs (critical)
+      - /var/lib/containers/nginx/cache:/var/cache/nginx
+      - /var/lib/containers/nginx/log:/var/log/nginx
+
+    depends_on:
+      - guacamole
+
+    networks:
+      - guacnet
+
+    security_opt:
+      - no-new-privileges:true
+      - seccomp=/usr/share/containers/seccomp.json
+
+    cap_drop:
+      - ALL
+
+    cap_add:
+      - NET_BIND_SERVICE
+
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128m
+        reservations:
+          cpus: "0.05"
+          memory: 32m
+
+volumes:
+  guac-db-data:
+
+networks:
+  guacnet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.18.0.0/24
+
+
+# [root@ansible-forge images]# ll
+total 1124764
+-rw-r--r--. 1 ansible ansible 372136620 Oct 29 02:03 ccop-guacamole-1.6.0.tar.gz
+-rw-r--r--. 1 ansible ansible 213501629 Oct 29 02:04 ccop-guacd-1.6.0.tar.gz
+-rw-r--r--. 1 ansible ansible  76829484 Oct 29 02:22 ccop-nginx-1.31.8.tar.gz
+-rw-r--r--. 1 ansible ansible 156480012 Oct 29 02:22 ccop-postgres-18.6.tar.gz
+-rw-r--r--. 1 ansible ansible 112259087 Oct 29 02:04 nucleus-guacamole-1.6.0.tar.gz
+-rw-r--r--. 1 ansible ansible 113336287 Oct 29 02:07 nucleus-guacd-1.6.0.tar.gz
+-rw-r--r--. 1 ansible ansible  26176404 Oct 29 02:22 nucleus-nginx-1.31.8.tar.gz
+-rw-r--r--. 1 ansible ansible  81021670 Oct 29 02:23 nucleus-postgres-18.6.tar.gz
+
+drwxrwx---. 10 ansible ansible-admin  135 Oct  9 09:23 weekly_build_grafana
+drwxrwx---. 10 ansible ansible-admin  135 Oct  9 09:28 weekly_build_guacamole
+drwxrwx---. 10 ansible ansible-admin  135 Oct  9 09:30 weekly_build_guacd
+drwxrwx---. 10 ansible ansible-admin  135 Oct  9 09:32 weekly_build_idrac
+drwxrwx---. 10 ansible ansible-admin  135 Oct  9 09:34 weekly_build_nginx_grafana
+drwxrwx---. 10 ansible ansible-admin  135 Oct  9 09:36 weekly_build_nginx_guac
+drwxrwx---. 10 ansible ansible-admin  135 Oct  9 09:37 weekly_build_postgres
+drwxrwx---. 10 ansible ansible-admin  135 Oct  9 09:38 weekly_build_prometheus
+drwxrwx---. 10 ansible ansible-admin  135 Oct  9 10:28 weekly_common
+
+/opt/ansible/nucleus/roles/weekly_common/tasks
+[root@ansible-forge tasks]# ll
+total 60
+-rw-rw-r--. 1 ansible ansible-admin 1376 Oct 22 13:43 build_image.yml
+-rw-rw-r--. 1 ansible ansible-admin  669 Oct 19 12:40 build_image.yml.bak-2026-10-22-1343
+-rw-rw-r--. 1 ansible ansible-admin  495 Oct 19 12:40 build.yml
+-rw-rw-r--. 1 ansible ansible-admin 1136 Oct  8 12:52 context.yml
+-rw-rw-r--. 1 ansible ansible-admin  831 Oct  8 12:52 detect_staged_one.yml
+-rw-rw-r--. 1 ansible ansible-admin 1006 Oct 19 10:59 detect_staged.yml
+-rw-rw-r--. 1 ansible ansible-admin 1536 Oct  8 13:25 detect_version.yml
+-rw-rw-r--. 1 ansible ansible-admin  522 Oct  8 12:52 directories.yml
+-rw-rw-r--. 1 ansible ansible-admin 4917 Oct  9 09:03 finish.yml
+-rw-rw-r--. 1 ansible ansible-admin 2968 Oct 19 12:40 main.yml
+-rw-rw-r--. 1 ansible ansible-admin 1215 Oct 19 10:59 prepare.yml
+-rw-rw-r--. 1 ansible ansible-admin  702 Oct 19 12:40 progress.yml
+-rw-rw-r--. 1 ansible ansible-admin 3560 Oct 19 12:40 scan_image.yml
+-rw-rw-r--. 1 ansible ansible-admin  166 Oct  8 12:52 scan.yml
+
+Finally, three of container-forge's daily builds are now failing, debian13-go, debian13-node22 and debian13-node24. The debian13-base and debian13-postgres18 are the only ones that worked today. It's feeling like these will never be stable.
+

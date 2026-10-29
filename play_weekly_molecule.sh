@@ -17,7 +17,7 @@ LOG="${LOG:-/opt/ansible/logs/weekly-molecule.log}"
 EMIT="${EMIT:-/usr/local/bin/emit_event.sh}"
 TEXTFILE_DIR="${TEXTFILE_DIR:-/var/lib/node_exporter/textfile}"
 CLASSES="${MOL_CLASSES:-nucleus ccop}" # image classes to test
-IMG_DIR="${IMG_DIR:-/opt/ansible/files/grafana/weekly/images}" # weekly image tarballs
+IMG_DIR="${IMG_DIR:-/opt/ansible/files/grafana/weekly}" # weekly tree: <week#>/images/<class>-grafana-<ver>.tar.gz
 WAIT_MAX="${WAIT_MAX:-10800}" # give up waiting for the builds after 3 h
 CRON_LINE='0 4 * * 4 /opt/ansible/nucleus/playbooks/play_weekly_molecule.sh >> /opt/ansible/logs/weekly-molecule-cron.log 2>&1'
 
@@ -71,7 +71,7 @@ run() { # run <event-name> <scenario> <class> <command...>
 
 skip() { # skip <event-name> <scenario> - no fresh image this week: status 2
   local name=$1 scen=$2 t1 lbl
-  t1=$(date +%s); log "--- $name: NOT TESTED (no image built in the last 24h in $IMG_DIR) ---"
+  t1=$(date +%s); log "--- $name: NOT TESTED (no image built in the last 24h under $IMG_DIR/*/images) ---"
   lbl="stack=\"grafana\",test=\"$scen\""
   METRICS="$METRICS$(printf 'pipeline_weekly_molecule_status{%s} 2\npipeline_weekly_molecule_timestamp_seconds{%s} %s\npipeline_weekly_molecule_duration_seconds{%s} 0\n' "$lbl" "$lbl" "$t1" "$lbl")
 "
@@ -79,7 +79,7 @@ skip() { # skip <event-name> <scenario> - no fresh image this week: status 2
 
 run grafana12 role-config - "$RUN_DIR/run-grafana12.sh"
 for c in $CLASSES; do
-  if [ -n "$(find "$IMG_DIR" -maxdepth 1 -name "$c-grafana-*.tar.gz" -mmin -1440 2>/dev/null)" ]; then
+  if [ -n "$(find "$IMG_DIR" -mindepth 3 -maxdepth 3 -path "*/images/$c-grafana-*.tar.gz" -mmin -1440 2>/dev/null)" ]; then
     run "grafana12-image-$c" "image-$c" - "$RUN_DIR/run-grafana12-image.sh" "$c"
   else
     skip "grafana12-image-$c" "image-$c"

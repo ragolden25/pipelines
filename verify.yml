@@ -4,8 +4,9 @@
 # and checks what each one actually did.
 #
 # The two classes answer different questions, so they are started differently:
-#   ccop    - FUNCTIONAL: does the application work at all on the staged config? Containers run the way
-#             the image defines them (no read-only root, no capability drop, image's own user).
+#   ccop    - FUNCTIONAL: does the application work at all on the staged config? No read-only root, no
+#             capability drop; Grafana runs as root (the ccop image is designed to), so file ownership
+#             inside the image never matters. The ccop Dockerfiles need no changes for this test.
 #   nucleus - HARDENED: does it still work the way docker-compose.yml runs it in production
 #             (read-only, cap_drop ALL, no-new-privileges, seccomp, nginx as 65532)?
 # ccop green + nucleus red = hardening broke it. Both red = the application or config broke it.
@@ -77,10 +78,11 @@
               + (['--security-opt', 'seccomp=/usr/share/containers/seccomp.json'] if seccomp.stat.exists else []))
              if cls == 'nucleus' else [] }}
         nginx_user: "{{ ['--user', '65532:65532', '--cap-add', 'NET_BIND_SERVICE'] if cls == 'nucleus' else [] }}"
+        grafana_user: "{{ ['--user', '0:0'] if cls == 'ccop' else [] }}"
 
     - name: Show how this class is being run
       ansible.builtin.debug:
-        msg: "class={{ cls }} mode={{ 'HARDENED (as docker-compose runs it)' if cls == 'nucleus' else 'FUNCTIONAL (image defaults)' }} flags={{ hardening + nginx_user }}"
+        msg: "class={{ cls }} mode={{ 'HARDENED (as docker-compose runs it)' if cls == 'nucleus' else 'FUNCTIONAL (image defaults)' }} flags={{ hardening + nginx_user + grafana_user }}"
 
     - name: Run the stack and check it
       block:
@@ -138,6 +140,7 @@
             argv: >-
               {{ ['docker', 'run', '-d', '--name', 'mol-grafana', '--network', net,
                   '--network-alias', 'grafana']
+                 + grafana_user
                  + hardening
                  + ['-p', '127.0.0.1::3000',
                     '-v', scr ~ '/grafana/config/grafana.ini:/etc/grafana/grafana.ini:ro',

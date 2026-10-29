@@ -422,3 +422,7 @@ main.yml
 The first shows the shape of the Grafana Molecule scenarios. The second is the image scenario, which is the main pattern I’ll copy for Guacamole. The third shows what the Guacamole role deploys. Paste whatever they print. If any file has passwords in it, swap those for placeholders first.
 
 From those I can draft the Guacamole scenarios and the self-cleaning runner scripts, and ask for anything else one file at a time.
+
+
+
+tail -60 "$(ls -t /opt/ansible/molecule/logs/grafana12-image-ccop-*.log | head -1)"

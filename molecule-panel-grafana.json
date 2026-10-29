@@ -1,0 +1,91 @@
+"id": 31,
+  "type": "stat",
+  "title": "GRAFANA STACK · Molecule tests (weekly)",
+  "description": "Result of the last weekly Molecule run (play_weekly_molecule.sh, Thursday 0400, after the weekly builds) for the Grafana stack: role-config = the configure_grafana_stack role on a Debian container; image-nucleus / image-ccop = the actual weekly images started on the role-staged config. Red = the latest weekly image or the role config broke (see /opt/ansible/molecule/logs/). Amber 'not reporting yet' = the scenario has not run or does not exist yet.",
+  "gridPos": {
+    "x": 0,
+    "y": 26,
+    "h": 6,
+    "w": 12
+  },
+  "fieldConfig": {
+    "defaults": {
+      "mappings": [
+        {
+          "options": {
+            "0": {
+              "color": "#d03b3b",
+              "index": 1,
+              "text": "FAILED"
+            },
+            "1": {
+              "color": "#0ca30c",
+              "index": 0,
+              "text": "OK"
+            },
+            "-1": {
+              "color": "#fab219",
+              "index": 2,
+              "text": "… NOT REPORTING YET"
+            }
+          },
+          "type": "value"
+        }
+      ],
+      "thresholds": {
+        "mode": "absolute",
+        "steps": [
+          {
+            "color": "#d03b3b",
+            "value": null
+          },
+          {
+            "color": "#0ca30c",
+            "value": 1
+          }
+        ]
+      },
+      "color": {
+        "mode": "thresholds"
+      },
+      "noValue": "no data yet"
+    },
+    "overrides": []
+  },
+  "pluginVersion": "12.4.11",
+  "targets": [
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "ds-prometheus"
+      },
+      "expr": "pipeline_weekly_molecule_status{stack=\"grafana\"} or on(test) label_replace(vector(-1), \"test\", \"deployment role\", \"\", \"\") or on(test) label_replace(vector(-1), \"test\", \"nucleus images\", \"\", \"\") or on(test) label_replace(vector(-1), \"test\", \"ccop images\", \"\", \"\")",
+      "instant": true,
+      "legendFormat": "{{test}}",
+      "range": false,
+      "refId": "A",
+      "editorMode": "code"
+    }
+  ],
+  "datasource": {
+    "type": "prometheus",
+    "uid": "ds-prometheus"
+  },
+  "options": {
+    "reduceOptions": {
+      "values": false,
+      "calcs": [
+        "lastNotNull"
+      ],
+      "fields": ""
+    },
+    "orientation": "horizontal",
+    "textMode": "name",
+    "wideLayout": true,
+    "colorMode": "background",
+    "graphMode": "none",
+    "justifyMode": "center",
+    "showPercentChange": false,
+    "percentChangeColorMode": "standard"
+  }
+}

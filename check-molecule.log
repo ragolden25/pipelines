@@ -426,3 +426,66 @@ From those I can draft the Guacamole scenarios and the self-cleaning runner scri
 
 
 tail -60 "$(ls -t /opt/ansible/molecule/logs/grafana12-image-ccop-*.log | head -1)"
+
+
+[ansible@ansible-forge playbooks]$ tail -60 "$(ls -t /opt/ansible/molecule/logs/grafana12-image-ccop-*.log | head -1)"
+        "logger=settings t=2026-10-29T17:09:32.861076559Z level=info msg=\"Config loaded from\" file=/usr/share/grafana/conf/defaults.ini",
+        "logger=settings t=2026-10-29T17:09:32.86109391Z level=info msg=\"Config loaded from\" file=/etc/grafana/grafana.ini",
+        "logger=settings t=2026-10-29T17:09:32.86110382Z level=info msg=\"Config overridden from Environment variable\" var=\"GF_PATHS_PROVISIONING=/etc/grafana/provisioning\"",
+        "logger=settings t=2026-10-29T17:09:32.861113424Z level=info msg=\"Config overridden from Environment variable\" var=\"GF_SECURITY_ADMIN_USER=admin\"",
+        "logger=settings t=2026-10-29T17:09:32.861123069Z level=info msg=\"Config overridden from Environment variable\" var=\"GF_SECURITY_ADMIN_PASSWORD=*********\"",
+        "logger=settings t=2026-10-29T17:09:32.86113199Z level=info msg=\"Config overridden from Environment variable\" var=\"GF_PLUGINS_PREINSTALL_DISABLED=true\"",
+        "logger=settings t=2026-10-29T17:09:32.861153077Z level=info msg=Target target=[all]",
+        "logger=settings t=2026-10-29T17:09:32.861171685Z level=info msg=\"Path Home\" path=/usr/share/grafana",
+        "logger=settings t=2026-10-29T17:09:32.861180882Z level=info msg=\"Path Data\" path=/usr/share/grafana/data",
+        "logger=settings t=2026-10-29T17:09:32.861217497Z level=info msg=\"Path Logs\" path=/usr/share/grafana/data/log",
+        "logger=settings t=2026-10-29T17:09:32.861225335Z level=info msg=\"Path Plugins\" path=/usr/share/grafana/data/plugins",
+        "logger=settings t=2026-10-29T17:09:32.861233203Z level=info msg=\"Path Provisioning\" path=/etc/grafana/provisioning",
+        "logger=settings t=2026-10-29T17:09:32.861256251Z level=info msg=\"App mode production\"",
+        "logger=featuremgmt t=2026-10-29T17:09:32.8634643Z level=info msg=FeatureToggles alertingRuleRecoverDeleted=true azureResourcePickerUpdates=true grafanaconThemes=true newLogsPanel=true newPanelPadding=true alertingNotificationsStepMode=true alertRuleRestore=true awsAsyncQueryCaching=true logsContextDatasourceUi=true influxdbBackendMigration=true newTimeRangeZoomShortcuts=true azureMonitorPrometheusExemplars=true awsDatasourcesTempCredentials=true alertingBulkActionsInUI=true logsPanelControls=true kubernetesDashboards=true alertingUseNewSimplifiedRoutingHashAlgorithm=true cloudWatchRoundUpEndTime=true alertingRulePermanentlyDelete=true preventPanelChromeOverflow=true cloudWatchNewLabelParsing=true publicDashboardsScene=true improvedExternalSessionHandlingSAML=true grafanaAssistantInProfilesDrilldown=true useSessionStorageForRedirection=true annotationPermissionUpdate=true lokiLabelNamesQueryApi=true logsExploreTableVisualisation=true alertingRuleVersionHistoryRestore=true alertingQueryAndExpressionsStepMode=true improvedExternalSessionHandling=true onlyStoreActionSets=true alertingMigrationUI=true lokiQuerySplitting=true azureMonitorEnableUserAuth=true alertingUIOptimizeReducer=true alertingSaveStateCompressed=true cloudWatchCrossAccountQuerying=true sharingDashboardImage=true enableSCIM=true prometheusAzureOverrideAudience=true timeRangePan=true newFiltersUI=true dashboardScene=true alertingImportYAMLUI=true dashgpt=true",
+        "logger=sqlstore t=2026-10-29T17:09:32.863599864Z level=info msg=\"Connecting to DB\" dbtype=sqlite3",
+        "logger=sqlstore t=2026-10-29T17:09:32.863612681Z level=info msg=\"Using SQLite driver\" driver=\"modernc.org/sqlite (CGO disabled)\"",
+        "logger=sqlstore t=2026-10-29T17:09:32.863633162Z level=info msg=\"Creating SQLite database file\" path=/usr/share/grafana/data/grafana.db",
+        "Error: ✗ failed to connect to database: failed to create SQLite database file \"/usr/share/grafana/data/grafana.db\": open /usr/share/grafana/data/grafana.db: permission denied"
+    ]
+}
+ok: [localhost] => (item=mol-nginx) => {
+    "msg": [
+        "Error response from daemon: No such container: mol-nginx"
+    ]
+}
+
+TASK [Fail the scenario] *******************************************************
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "The weekly images did not come up healthy on the staged config - see the logs above"}
+
+TASK [Remove the test containers and network] **********************************
+changed: [localhost]
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=15   changed=6    unreachable=0    failed=1    skipped=0    rescued=1    ignored=0
+
+CRITICAL Ansible return code was 2, command was: ansible-playbook --inventory /opt/ansible/molecule/cache/molecule/configure_grafana_stack/grafana12-image/inventory --skip-tags molecule-notest,notest /opt/ansible/nucleus/roles/configure_grafana_stack/molecule/grafana12-image/verify.yml
+WARNING  An error occurred during the test sequence action: 'verify'. Cleaning up.
+INFO     Running grafana12-image > cleanup
+WARNING  Skipping, cleanup playbook not configured.
+INFO     Running grafana12-image > destroy
+
+PLAY [Destroy] *****************************************************************
+
+TASK [Set async_dir for HOME env] **********************************************
+ok: [localhost]
+
+TASK [Destroy molecule instance(s)] ********************************************
+changed: [localhost] => (item=std1)
+
+TASK [Wait for instance(s) deletion to complete] *******************************
+FAILED - RETRYING: [localhost]: Wait for instance(s) deletion to complete (300 retries left).
+changed: [localhost] => (item=std1)
+
+TASK [Delete docker networks(s)] ***********************************************
+skipping: [localhost]
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=3    changed=2    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0
+
+INFO     Pruning extra files from scenario ephemeral directory

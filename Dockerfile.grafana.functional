@@ -51,6 +51,10 @@ COPY staged/public /usr/share/grafana/public
 # volume mounts, not baked into the image — nothing to create here.
 RUN chmod 0755 /usr/local/bin/grafana /usr/local/bin/grafana-cli /usr/local/bin/grafana-server
 
+# COPY keeps the staged files' modes (some are owner-only), which root could read
+# but the grafana user can't. Make the shipped config and web assets readable by all.
+RUN chmod -R a+rX /usr/share/grafana /etc/grafana
+
 # Runs as grafana (65532) like the hardened image: the role stages config/data
 # owned by 65532 and docker-compose drops ALL capabilities, so root can't write
 # there. This is still the debug/testing image — for a root shell to install

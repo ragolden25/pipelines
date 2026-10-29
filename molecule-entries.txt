@@ -1,0 +1,32 @@
+Molecule testing: Grafana stack (weekly)
+
+Added a third result state to play_weekly_molecule.sh: 1 = passed, 0 = failed, 2 = not tested. An image class with no fresh weekly image is now reported as not tested instead of failed.
+Fixed the image freshness check to search the weekly tree (weekly/<week#>/images).
+Made the image test class-aware in grafana12-image/verify.yml. ccop runs in functional mode (image defaults; Grafana as root, as designed) to prove the application works. nucleus runs hardened, exactly as docker-compose runs it in production (read-only, cap_drop ALL, no-new-privileges, seccomp). ccop passing with nucleus failing now points to hardening as the cause.
+Diagnosed ccop Grafana test failures: with cap_drop ALL, a root process can’t write to 65532-owned staged config. Resolved through the functional test mode, with no image rebuild required.
+Added a named grafana user (UID/GID 65532) to the ccop Grafana Dockerfile for ownership tracking. Propagated to weekly/44 and fy27q1.
+Pending: install the updated verify.yml and rerun to confirm all three Grafana tests pass.
+
+Pipeline status dashboard
+
+Molecule panels (Grafana and Guacamole) now show plain names: Deployment role, ccop images, nucleus images.
+Status shows as text and colour: OK (green), FAILED (red), NOT REPORTED (amber).
+Fixed duplicate rows caused by placeholder series names not matching the real test names.
+Increased panel text size. Updated dashboard saved and exported.
+
+Molecule testing: Guacamole stack
+
+Reviewed the Grafana Molecule scenarios as the pattern for Guacamole.
+Confirmed the inputs: configure_guacamole is the role under test; guac_export_ptek.sql (a full dump) is the test database; guacadmin login uses the existing ansible_password vault variable (no vault changes); images come from avocado/weekly/<week#>/images.
+Defined the checks: extension loading, PostgreSQL auth module, guacadmin login through the API, guacd availability, config and directory layout from docker-compose.yml, and nginx TLS proxy.
+Self-cleaning designed in from the start: per-test scratch folders, cleanup on any exit, and log retention.
+Next: review the configure_guacamole tasks, then build the role and image scenarios.
+
+ansible-forge
+
+/opt/ansible/molecule (1 TB) filled to 100% by a runaway diagnostic report file. Stopped the process, removed the file (back to 5% used), and fixed the script so it can’t recur (output outside /opt/ansible, 50 MB cap).
+
+container-forge
+
+Networking failures traced to NetworkManager repeatedly creating a duplicate OOB connection profile with the same MAC. Removed the duplicate, disabled automatic profile creation, and pinned the working profile to the NIC.
+Daily builds of debian13-go, debian13-node22 and debian13-node24 are working again.

@@ -1,4 +1,6 @@
 #!/bin/bash
+# PATH for cron/non-login shells (fix-cron-path.sh)
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 # mmdebstrap-build-node24.sh
 #
 # Builds container-forge/debian13-node24. The image is built under a
@@ -9,11 +11,12 @@
 NODE24_OUTPUT_DIR="${NODE24_OUTPUT_DIR:-/var/www/html/images/debian13-node24}"
 TAG="$(date +%Y%m%d)"
 IMAGE="container-forge/debian13-node24"
+EMIT="${EMIT:-/usr/local/bin/emit_event.sh}"
 # What this image must provide: Node >= 24.20 (Prometheus >= 3.15 UI build), npm and
 # pnpm. Edit this line if the required toolset changes.
 SMOKE_CMD="${SMOKE_CMD:-node --version && npm --version && pnpm --version && node -e 'const [a,b]=process.versions.node.split(\".\").map(Number); process.exit(a>24||(a===24&&b>=20)?0:1)'}"
 
-fail() { echo "ERROR: $*" >&2; exit 1; }
+fail() { echo "ERROR: $*" >&2; "$EMIT" build debian13-node24 fail "" 86400 >/dev/null 2>&1 || true; exit 1; }
 
 echo "=== 1. Build debian13-node24 candidate image ==="
 docker build \
@@ -47,3 +50,4 @@ for f in "debian13-node24-$TAG.digest.asc:digest-$TAG.txt" \
 done
 [[ $rc -eq 0 ]] || fail "GPG signing failed"
 echo "=== debian13-node24 build complete ==="
+"$EMIT" build debian13-node24 success "$(cut -c1-12 "$NODE24_OUTPUT_DIR/digest-latest.txt")" 86400 >/dev/null 2>&1 || true

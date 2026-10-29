@@ -19,3 +19,11 @@ pgrep -af 'grype|syft|oscap'     # should print nothing
 find /opt/ansible/molecule/scans/tmp -mindepth 1 -delete
 
 du -xh --max-depth=2 /opt/ansible/molecule 2>/dev/null | sort -h | tail -15
+
+find /opt/ansible/nucleus/roles/configure_grafana_stack/molecule -type f | sort
+cat /opt/ansible/nucleus/roles/configure_grafana_stack/molecule/grafana12-image/*.yml
+ls -R /opt/ansible/nucleus/roles/configure_guacamole_r9 | head -60
+
+The first shows the shape of the Grafana Molecule scenarios. The second is the image scenario, which is the main pattern I’ll copy for Guacamole. The third shows what the Guacamole role deploys. Paste whatever they print. If any file has passwords in it, swap those for placeholders first.
+
+From those I can draft the Guacamole scenarios and the self-cleaning runner scripts, and ask for anything else one file at a time.

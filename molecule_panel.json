@@ -1,0 +1,58 @@
+{
+  "type": "stat",
+  "title": "Grafana Stack – Molecule tests (weekly)",
+  "datasource": { "type": "prometheus" },
+  "targets": [
+    {
+      "refId": "A",
+      "expr": "pipeline_weekly_molecule_status{stack=\"grafana\"}",
+      "instant": true,
+      "range": false,
+      "legendFormat": "{{test}}"
+    }
+  ],
+  "fieldConfig": {
+    "defaults": {
+      "unit": "none",
+      "color": { "mode": "thresholds" },
+      "thresholds": {
+        "mode": "absolute",
+        "steps": [ { "color": "yellow", "value": null } ]
+      },
+      "mappings": [
+        {
+          "type": "value",
+          "options": {
+            "0":  { "text": "FAILED",       "color": "red",    "index": 0 },
+            "1":  { "text": "OK",           "color": "green",  "index": 1 },
+            "2":  { "text": "NOT REPORTED", "color": "yellow", "index": 2 },
+            "-1": { "text": "NOT REPORTED", "color": "yellow", "index": 3 }
+          }
+        }
+      ]
+    },
+    "overrides": [
+      {
+        "matcher": { "id": "byName", "options": "role-config" },
+        "properties": [ { "id": "displayName", "value": "Deployment role" } ]
+      },
+      {
+        "matcher": { "id": "byName", "options": "image-ccop" },
+        "properties": [ { "id": "displayName", "value": "ccop images" } ]
+      },
+      {
+        "matcher": { "id": "byName", "options": "image-nucleus" },
+        "properties": [ { "id": "displayName", "value": "nucleus images" } ]
+      }
+    ]
+  },
+  "options": {
+    "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+    "orientation": "horizontal",
+    "textMode": "value_and_name",
+    "colorMode": "background",
+    "graphMode": "none",
+    "justifyMode": "center",
+    "text": { "titleSize": 18, "valueSize": 28 }
+  }
+}

@@ -1,0 +1,55 @@
+FROM container-forge/debian13-slim:latest
+
+ARG GRAFANA_VERSION
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
+        openssl \
+        libssl3 \
+        tzdata \
+        libc6 \
+        libstdc++6 && \
+    rm -rf /var/lib/apt/lists/*
+
+# Required directories
+RUN mkdir -p \
+    /etc/grafana \
+    /etc/grafana/provisioning \
+    /usr/share/grafana/conf \
+    /usr/share/grafana/public \
+    /var/lib/grafana \
+    /usr/local/bin
+
+# Copy staged Grafana runtime
+# NOTE: stage-grafana.sh copies binaries flat into staged/ (no bin/
+# subdirectory) via `find .../bin -name 'grafana*' -exec cp {} staged/`,
+# so the unified grafana binary lands at staged/grafana, not
+# staged/bin/grafana.
+# FIX: grafana-cli and grafana-server were never copied — only the
+# unified grafana binary was. v12 still ships all three
+# (staged/{grafana,grafana-cli,grafana-server}); grafana-cli in
+# particular is needed for `docker exec ... grafana-cli plugins install`,
+# admin password resets, etc.
+COPY staged/grafana /usr/local/bin/grafana
+COPY staged/grafana-cli /usr/local/bin/grafana-cli
+COPY staged/grafana-server /usr/local/bin/grafana-server
+COPY staged/conf/defaults.ini /usr/share/grafana/conf/defaults.ini
+COPY staged/conf/provisioning /etc/grafana/provisioning
+COPY staged/public /usr/share/grafana/public
+
+# grafana.ini is bind-mounted at runtime via docker-compose.yml's
+# volume mounts, not baked into the image — nothing to create here.
+RUN chmod 0755 /usr/local/bin/grafana /usr/local/bin/grafana-cli /usr/local/bin/grafana-server
+
+# Deliberately runs as root: this is the debug/testing image, kept
+# simple to exec into (install packages, poke at permissions, etc.)
+# without chasing UID/GID ownership issues first. The hardened image
+# is the one that runs as 65532.
+WORKDIR /usr/share/grafana
+
+EXPOSE 3000
+
+ENTRYPOINT ["/usr/local/bin/grafana"]
+CMD ["server", "--homepath=/usr/share/grafana", "--config=/etc/grafana/grafana.ini"]

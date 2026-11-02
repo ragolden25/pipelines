@@ -324,3 +324,82 @@ weekly_guac_ccop_guacamole_1_6_0.20261029T181040Z.vuln.html
 
 grep -rn 'guacd_version\|guacamole_version\|postgres_version\|nginx_version' /opt/ansible/nucleus/roles/configure_guacamole --include=*.yml --include=*.j2 | grep -v 'vars/main.yml'
 weekly_guac_ccop_guacamole_1_6_0.20261029T181040Z.vuln.json
+
+
+
+
+[root@ansible-forge defaults]# grep -rn 'guacd_version\|guacamole_version\|postgres_version\|nginx_version' /opt/ansible/nucleus/roles/configure_guacamole --include=*.yml --include=*.j2 | grep -v 'vars/main.yml'
+weekly_guac_ccop_guacamole_1_6_0.20261029T181040Z.vuln.json
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/orig-main.yml:142:    - guacd-{{ guacd_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/orig-main.yml:143:    - guacamole-{{ guacamole_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/orig-main.yml:144:    - postgres-{{ postgres_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/orig-main.yml:145:    - nginx-{{ nginx_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/orig-main.yml:154:    - guacd-{{ guacd_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/orig-main.yml:155:    - guacamole-{{ guacamole_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/orig-main.yml:156:    - postgres-{{ postgres_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/orig-main.yml:166:    - guacd-{{ guacd_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/orig-main.yml:167:    - guacamole-{{ guacamole_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/orig-main.yml:168:    - postgres-{{ postgres_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/orig-main.yml:169:    - nginx-{{ nginx_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/orig-main.yml:178:    - guacd-{{ guacd_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/orig-main.yml:179:    - guacamole-{{ guacamole_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/orig-main.yml:180:    - postgres-{{ postgres_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/orig-main.yml:189:    - guacd-{{ guacd_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/orig-main.yml:190:    - guacamole-{{ guacamole_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/orig-main.yml:191:    - postgres-{{ postgres_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/orig-main.yml:192:    - nginx-{{ nginx_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/orig-main.yml:201:    - guacd-{{ guacd_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/orig-main.yml:202:    - guacamole-{{ guacamole_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/orig-main.yml:203:    - postgres-{{ postgres_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc1-main.yml:140:    - guacd-{{ guacd_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc1-main.yml:141:    - guacamole-{{ guacamole_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc1-main.yml:142:    - postgres-{{ postgres_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc1-main.yml:143:    - nginx-{{ nginx_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc1-main.yml:153:    - guacd-{{ guacd_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc1-main.yml:154:    - guacamole-{{ guacamole_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc1-main.yml:155:    - postgres-{{ postgres_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc1-main.yml:156:    - nginx-{{ nginx_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc1-main.yml:165:    - guacd-{{ guacd_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc1-main.yml:166:    - guacamole-{{ guacamole_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc1-main.yml:167:    - postgres-{{ postgres_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc1-main.yml:168:    - nginx-{{ nginx_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc2-main.yml:141:    - guacd-{{ guacd_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc2-main.yml:142:    - guacamole-{{ guacamole_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc2-main.yml:143:    - postgres-{{ postgres_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc2-main.yml:144:    - nginx-{{ nginx_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc2-main.yml:153:    - guacd-{{ guacd_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc2-main.yml:154:    - guacamole-{{ guacamole_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc2-main.yml:155:    - postgres-{{ postgres_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc2-main.yml:165:    - guacd-{{ guacd_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc2-main.yml:166:    - guacamole-{{ guacamole_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc2-main.yml:167:    - postgres-{{ postgres_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc2-main.yml:168:    - nginx-{{ nginx_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc2-main.yml:177:    - guacd-{{ guacd_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc2-main.yml:178:    - guacamole-{{ guacamole_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc2-main.yml:179:    - postgres-{{ postgres_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc2-main.yml:188:    - guacd-{{ guacd_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc2-main.yml:189:    - guacamole-{{ guacamole_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc2-main.yml:190:    - postgres-{{ postgres_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc2-main.yml:191:    - nginx-{{ nginx_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc2-main.yml:200:    - guacd-{{ guacd_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc2-main.yml:201:    - guacamole-{{ guacamole_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc2-main.yml:202:    - postgres-{{ postgres_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc3-main.yml:124:    - guacd-{{ guacd_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc3-main.yml:125:    - guacamole-{{ guacamole_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc3-main.yml:126:    - postgres-{{ postgres_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc3-main.yml:127:    - nginx-{{ nginx_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc3-main.yml:136:    - guacd-{{ guacd_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc3-main.yml:137:    - guacamole-{{ guacamole_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc3-main.yml:138:    - postgres-{{ postgres_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc3-main.yml:150:    - guacd-{{ guacd_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc3-main.yml:151:    - guacamole-{{ guacamole_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc3-main.yml:152:    - postgres-{{ postgres_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc3-main.yml:153:    - nginx-{{ nginx_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc3-main.yml:162:    - guacd-{{ guacd_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc3-main.yml:163:    - guacamole-{{ guacamole_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/tasks/archive/rc3-main.yml:164:    - postgres-{{ postgres_version }}.tar.gz
+/opt/ansible/nucleus/roles/configure_guacamole/templates/README.md.j2:12:Guacamole Version: {{ hostvars[inventory_hostname].guacamole_version }}
+/opt/ansible/nucleus/roles/configure_guacamole/templates/README.md.j2:13:Guacd Version: {{ hostvars[inventory_hostname].guacd_version }}
+/opt/ansible/nucleus/roles/configure_guacamole/templates/README.md.j2:14:Postgres Version: {{ hostvars[inventory_hostname].postgres_version }}
+/opt/ansible/nucleus/roles/configure_guacamole/templates/README.md.j2:15:NGINX Version: {{ hostvars[inventory_hostname].nginx_version }}
+-bash: weekly_guac_ccop_guacamole_1_6_0.20261029T181040Z.vuln.json: command not found

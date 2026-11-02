@@ -42,6 +42,10 @@
           ansible.builtin.include_tasks: build.yml
         - name: Weekly - scan images
           ansible.builtin.include_tasks: scan.yml
+        # Sign after scanning, same order as the quarterly builds. The deployment roles (and the
+        # weekly Molecule deployment test) only load images whose signature verifies.
+        - name: Weekly - sign images
+          ansible.builtin.include_tasks: sign_weekly_images.yml
         - name: Weekly - mark success
           ansible.builtin.set_fact:
             weekly_status: success

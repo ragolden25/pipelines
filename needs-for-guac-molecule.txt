@@ -25,5 +25,12 @@ drwxrwx---. 2 ansible ansible-admin 4096 Oct  1 14:00 archive
 -rw-rw-r--. 1 ansible ansible-admin 1109 Oct  1 15:53 stage-environment.yml
 -rw-rw-r--. 1 ansible ansible-admin 1770 Oct  1 15:54 symlink-current.yml
 
+No, not all of them. Since the test runs the whole role unchanged, I only need the two files that shape the test:
 
+main.yml: the order the tasks run in, and how the role is called.
+nucleus-images.yml: where the role gets its images from. This is the one spot Molecule has to point at the weekly ccop or nucleus set instead of the quarterly one.
+
+One paste:
+
+cd /opt/ansible/nucleus/roles/configure_guacamole/tasks && for f in main.yml nucleus-images.yml; do echo "=== $f"; cat "$f"; done
 

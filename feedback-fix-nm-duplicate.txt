@@ -1,0 +1,21 @@
+root@container-forge:~/bin# ./fix-nm-duplicate.sh enp1s0
+[08:13:44] keeper 'enp1s0' (e8e94f5a-6144-4ab4-953f-eab44a07ae24) on enp1s0, MAC 52:54:00:91:31:ae, file unknown
+[08:13:44] uptime: up 4 hours, 2 minutes
+[08:13:44] --- 1. profiles that compete for enp1s0
+[08:13:44] none right now
+[08:13:44] --- 2. pinning 'enp1s0' to enp1s0 / 52:54:00:91:31:ae
+[08:13:44] pinned
+[08:13:44] --- 3. NetworkManager auto-default profiles
+[08:13:44] already off (/etc/NetworkManager/conf.d/90-no-auto-default.conf)
+[08:13:44] NetworkManager config reloaded
+[08:13:44] --- 4. boot-time sources
+[08:13:44] ifupdown: commented out enp1s0 in /etc/network/interfaces (backup /etc/network/interfaces.bak-20261102-0813)
+[08:13:44] cloud-init: network config already disabled
+[08:13:44] --- 5. kernel boot args: none that create profiles
+[08:13:44] --- result
+NAME     UUID                                  DEVICE   FILENAME               >
+enp7s0   73051c5c-71b0-3ae0-9f5e-9315f650cb28  enp7s0   /etc/NetworkManager/sys>
+enp1s0   e8e94f5a-6144-4ab4-953f-eab44a07ae24  enp1s0   /etc/NetworkManager/sys>
+docker0  042b781a-1daf-4798-a0da-f7b53b1447db  docker0  /run/NetworkManager/sys>
+lo       e220055a-630b-4766-a955-5271d781a9ac  lo       /run/NetworkManager/sys>
+[08:14:23] done - one profile should be on enp1s0. Boot-time fixes apply from the next reboot.

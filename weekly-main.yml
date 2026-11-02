@@ -1,0 +1,71 @@
+---
+# weekly_common/tasks/main.yml
+# One complete weekly build of the component described by `weekly_component`.
+# Called by every weekly_build_<component> role:   include_role: weekly_common
+# A failure anywhere is caught here, recorded and reported; it never stops the playbook.
+
+- name: Weekly - reset state
+  ansible.builtin.set_fact:
+    weekly_version: ""
+    weekly_status: fail
+    weekly_failed_step: start
+    weekly_failed_class: ""
+    weekly_failed_scan: false
+
+- name: "Weekly {{ weekly_component.name }}"
+  block:
+    - name: Weekly - work out the quarter and week
+      ansible.builtin.include_tasks: context.yml
+
+    - name: Weekly - create directories
+      ansible.builtin.include_tasks: directories.yml
+
+    - name: Weekly - detect version
+      ansible.builtin.include_tasks: detect_version.yml
+
+    - name: Weekly - nothing staged yet, skip
+      ansible.builtin.set_fact:
+        weekly_status: skipped
+        weekly_failed_step: waiting-on-staging
+      when: weekly_version | length == 0
+
+    - name: Weekly - build and scan
+      when: weekly_version | length > 0
+      block:
+        - name: Weekly - progress (preparing)
+          ansible.builtin.include_tasks: progress.yml
+          vars:
+            weekly_step: "preparing the working copy"
+        - name: Weekly - prepare working copy
+          ansible.builtin.include_tasks: prepare.yml
+        - name: Weekly - build images
+          ansible.builtin.include_tasks: build.yml
+        - name: Weekly - scan images
+          ansible.builtin.include_tasks: scan.yml
+        - name: Weekly - mark success
+          ansible.builtin.set_fact:
+            weekly_status: success
+            weekly_failed_step: done
+
+  rescue:
+    - name: Weekly - record failure
+      ansible.builtin.set_fact:
+        weekly_status: fail
+        weekly_failed_step: "{{ ansible_failed_task.name | default('unknown') }}"
+        # which image class the failing step belonged to (build loop item, or the class named in a scan task)
+        weekly_failed_class: >-
+          {{ (ansible_failed_result.results | default([]) | selectattr('failed', 'defined') | selectattr('failed')
+              | map(attribute='item') | map(attribute='cls') | list | first)
+             | default(ansible_failed_task.name | default('') | regex_search('ccop|nucleus') or '', true) }}
+        weekly_failed_scan: "{{ 'scan' in (ansible_failed_task.name | default('') | lower) }}"
+    - name: Weekly - show failure
+      ansible.builtin.debug:
+        msg: "{{ weekly_component.name }} failed at '{{ weekly_failed_step }}': {{ ansible_failed_result.msg | default('see output above') }}"
+
+  always:
+    - name: Weekly - finish (result, cleanup, status)
+      ansible.builtin.include_tasks: finish.yml
+    - name: Weekly - progress (finished)
+      ansible.builtin.include_tasks: progress.yml
+      vars:
+        weekly_step: "finished: {{ weekly_status }}{{ ' at ' ~ weekly_failed_step if weekly_status != 'success' else '' }}"

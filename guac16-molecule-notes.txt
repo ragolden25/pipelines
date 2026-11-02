@@ -1,3 +1,52 @@
 tar -xzf guac16-molecule.tar.gz -C /
 chown -R ansible:ansible-admin /opt/ansible/nucleus/roles/configure_guacamole/molecule /opt/ansible/molecule/run-guac16.sh /opt/ansible/nucleus/playbooks/play_weekly_molecule.sh
 su - ansible -c '/opt/ansible/molecule/run-guac16.sh deploy && /opt/ansible/molecule/run-guac16.sh verify'
+
+
+
+
+su - ansible -c '/opt/ansible/molecule/run-guac16.sh deploy && /opt/ansible/molecule/run-guac16.sh verify'
+INFO     guac16 scenario test matrix: dependency, create, prepare, converge
+INFO     Running guac16 > dependency
+WARNING  Skipping, missing the requirements file.
+WARNING  Skipping, missing the requirements file.
+INFO     Running guac16 > create
+WARNING  Skipping, create action has no playbook.
+INFO     Running guac16 > prepare
+
+PLAY [Prepare the weekly test artifact folder] *********************************
+
+TASK [Newest weekly images folder that has this class] *************************
+ok: [localhost]
+
+TASK [A weekly images folder must exist] ***************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "All assertions passed"
+}
+
+TASK [Start from an empty test folder] *****************************************
+ok: [localhost]
+
+TASK [Test folder structure] ***************************************************
+changed: [localhost] => (item=/opt/ansible/molecule/scratch/guacamole/artifact)
+changed: [localhost] => (item=/opt/ansible/molecule/scratch/guacamole/artifact/images)
+changed: [localhost] => (item=/opt/ansible/molecule/scratch/guacamole/artifact/provenance/nucleus)
+
+TASK [Copy everything from current except its images and provenance] ***********
+changed: [localhost]
+
+TASK [Link this week's images into the test folder] ****************************
+changed: [localhost]
+
+TASK [Signing key fingerprint (the key in gpgkeys/ansible.pub)] ****************
+ok: [localhost]
+
+TASK [Sign the weekly images] **************************************************
+fatal: [localhost]: FAILED! => {"changed": true, "cmd": "for f in \"/opt/ansible/molecule/scratch/guacamole/artifact\"/images/nucleus-*.tar.gz; do\n  gpg --batch --yes --armor --local-user \"62C3321A59B3A84A349B6D183343CF634E4B6606\" --detach-sign      --output \"/opt/ansible/molecule/scratch/guacamole/artifact/provenance/nucleus/$(basename \"$f\").asc\" \"$f\" || exit 1\ndone\n", "delta": "0:00:00.027851", "end": "2026-11-02 10:49:58.128380", "msg": "non-zero return code", "rc": 1, "start": "2026-11-02 10:49:58.100529", "stderr": "gpg: skipped \"62C3321A59B3A84A349B6D183343CF634E4B6606\": No secret key\ngpg: signing failed: No secret key", "stderr_lines": ["gpg: skipped \"62C3321A59B3A84A349B6D183343CF634E4B6606\": No secret key", "gpg: signing failed: No secret key"], "stdout": "", "stdout_lines": []}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=7    changed=3    unreachable=0    failed=1    skipped=0    rescued=0    ignored=0
+
+CRITICAL Ansible return code was 2, command was: ansible-playbook --extra-vars avocado_artifact_dir=/opt/ansible/molecule/scratch/guacamole/artifact --inventory /opt/ansible/molecule/cache/molecule/configure_guacamole/guac16/inventory --skip-tags molecule-notest,notest /opt/ansible/nucleus/roles/configure_guacamole/molecule/guac16/prepare.yml
+log: /opt/ansible/molecule/logs/guac16-deploy-2026-11-02-1049.log (exit 2)

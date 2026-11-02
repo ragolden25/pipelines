@@ -2,5 +2,28 @@ I need the same two things as before:
 
 the VM’s name in /home/ansible/inventory.ini, and the configure_guacamole role contents. 
 
-That one-paste command in my last message gets them. 
-With those I’ll write the scenario, the runner scripts, and the updated weekly script in one pass.
+[root@ansible-forge textfile]# grep guac /home/ansible/inventory.ini
+guac ansible_host=192.168.110.38 fqdn=guac.nuc2.scires.com.
+
+Do you need the contents of each task? That's going to take me awhile to gather.
+
+[root@ansible-forge textfile]# cd /opt/ansible/nucleus/roles/configure_guacamole
+[root@ansible-forge configure_guacamole]# cd tasks/
+[root@ansible-forge tasks]# ll
+total 56
+drwxrwx---. 2 ansible ansible-admin 4096 Oct  1 14:00 archive
+-rw-rw-r--. 1 ansible ansible-admin 1133 Oct  1 15:55 compose-setup.yml
+-rw-rw-r--. 1 ansible ansible-admin 4757 Oct  2 14:38 db-import.yml
+-rw-rw-r--. 1 ansible ansible-admin 1614 Oct  1 15:54 dev-cleanup.yml
+-rw-rw-r--. 1 ansible ansible-admin 2328 Oct  2 14:58 directory-setup.yml
+-rw-rw-r--. 1 ansible ansible-admin 1303 Oct  1 15:58 firewall.yml
+-rw-rw-r--. 1 ansible ansible-admin  667 Oct  1 14:03 generate-readme.yml
+-rw-rw-r--. 1 ansible ansible-admin 2319 Oct  1 15:57 guacamole-app-files.yml
+-rw-rw-r--. 1 ansible ansible-admin 1576 Oct  1 14:01 main.yml
+-rw-rw-r--. 1 ansible ansible-admin 3630 Oct  1 15:57 nucleus-images.yml
+-rw-rw-r--. 1 ansible ansible-admin 2553 Oct  2 08:38 permissions-and-configs.yml
+-rw-rw-r--. 1 ansible ansible-admin 1109 Oct  1 15:53 stage-environment.yml
+-rw-rw-r--. 1 ansible ansible-admin 1770 Oct  1 15:54 symlink-current.yml
+
+
+

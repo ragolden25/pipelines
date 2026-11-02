@@ -58,10 +58,11 @@ if [[ $# -ge 1 ]]; then
     PROMETHEUS_VERSION="$1"
 else
     echo "--- No PROMETHEUS_VERSION provided; resolving latest stable tag ---"
+    # Only plain vX.Y.Z tags: the (?=") requires the closing quote right after the
+    # patch number, so v3.16.0-rc.2 no longer gets cut down to 3.16.0.
     PROMETHEUS_VERSION="$(
       curl -s https://api.github.com/repos/prometheus/prometheus/releases \
-        | grep -oP '"tag_name":\s*"v\K[0-9]+\.[0-9]+\.[0-9]+' \
-        | grep -vE '(-rc|-beta|-alpha)' \
+        | grep -oP '"tag_name":\s*"v\K[0-9]+\.[0-9]+\.[0-9]+(?=")' \
         | sort -V \
         | tail -n1
     )"

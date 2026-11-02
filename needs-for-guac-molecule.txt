@@ -235,3 +235,5 @@ nginx_networks:
 extra_networks: []
 
 
+ls -l /opt/ansible/files/avocado/current; ls -R /opt/ansible/files/avocado/current/ | head -40; echo ----; ls -R /opt/ansible/files/avocado/weekly/44/ | head -40
+

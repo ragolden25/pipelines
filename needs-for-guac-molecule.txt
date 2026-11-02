@@ -1,0 +1,1 @@
+I need the same two things as before: the VM’s name in /home/ansible/inventory.ini, and the configure_guacamole role contents. That one-paste command in my last message gets them. With those I’ll write the scenario, the runner scripts, and the updated weekly script in one pass.

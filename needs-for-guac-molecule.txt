@@ -34,3 +34,204 @@ One paste:
 
 cd /opt/ansible/nucleus/roles/configure_guacamole/tasks && for f in main.yml nucleus-images.yml; do echo "=== $f"; cat "$f"; done
 
+[root@ansible-forge tasks]# cd /opt/ansible/nucleus/roles/configure_guacamole/tasks && for f in main.yml nucleus-images.yml; do echo "=== $f"; cat "$f"; done
+=== main.yml
+---
+# =====================================================================
+# configure_guacamole role — TASKS ONLY
+# =====================================================================
+
+# ───────────────────────────────────────────────
+# Phase 1: Environment & File Prep
+# ───────────────────────────────────────────────
+- name: Execute environmental bootstrap and file staging
+  ansible.builtin.include_tasks: stage-environment.yml
+
+# ───────────────────────────────────────────────
+# Phase 2: Database Import
+# ───────────────────────────────────────────────
+- name: Bootstrap Postgres and import Guacamole database dump
+  ansible.builtin.include_tasks: db-import.yml
+
+# ───────────────────────────────────────────────
+# Phase 3: Start Stack & Hardened Checks
+# ───────────────────────────────────────────────
+- name: Start full Guacamole stack
+  ansible.builtin.shell: /var/lib/containers/compose/run.sh
+  args:
+    executable: /bin/bash
+  register: guac_stack
+  failed_when: guac_stack.rc not in [0, 1]
+=== nucleus-images.yml
+---
+# Find, copy, GPG-verify, and load the hardened nucleus images.
+# ───────────────────────────────────────────────
+# Stage: Copy nucleus images
+# ───────────────────────────────────────────────
+
+- name: Find nucleus images in avocado files
+  ansible.builtin.find:
+    paths: "{{ avocado_artifact_dir }}/images"
+    patterns: "nucleus-*.tar.gz"
+  register: nucleus_src_images
+  delegate_to: localhost
+
+- name: Copy nucleus images to target host
+  ansible.builtin.copy:
+    src: "{{ item.path }}"
+    dest: "/var/lib/containers/images/{{ item.path | basename }}"
+    mode: "0640"
+  loop: "{{ nucleus_src_images.files }}"
+  loop_control:
+    label: "{{ item.path }}"
+
+# ───────────────────────────────────────────────
+# GPG Signature Verification
+# ───────────────────────────────────────────────
+
+- name: Ensure gpgkeys directory exists
+  ansible.builtin.file:
+    path: /var/lib/containers/gpgkeys
+    state: directory
+    mode: '0755'
+
+- name: Copy GPG public key
+  ansible.builtin.copy:
+    src: "{{ avocado_artifact_dir }}/gpgkeys/ansible.pub"
+    dest: "/var/lib/containers/gpgkeys/ansible.pub"
+    mode: "0644"
+
+- name: Import GPG public key
+  ansible.builtin.shell: |
+    gpg --import /var/lib/containers/gpgkeys/ansible.pub
+  args:
+    executable: /bin/bash
+
+- name: Find nucleus signature files
+  ansible.builtin.find:
+    paths: "{{ avocado_artifact_dir }}/provenance/nucleus"
+    patterns: "nucleus-*.tar.gz.asc"
+  register: nucleus_signature_files
+  delegate_to: localhost
+
+- name: Copy nucleus signature files to target host
+  ansible.builtin.copy:
+    src: "{{ item.path }}"
+    dest: "/var/lib/containers/images/{{ item.path | basename }}"
+    mode: "0640"
+  loop: "{{ nucleus_signature_files.files }}"
+  loop_control:
+    label: "{{ item.path }}"
+
+- name: Verify GPG signatures for all nucleus images
+  ansible.builtin.shell: |
+    gpg --trust-model always \
+        --verify "/var/lib/containers/images/{{ item.path | basename }}.asc" \
+                 "/var/lib/containers/images/{{ item.path | basename }}"
+  args:
+    executable: /bin/bash
+  loop: "{{ nucleus_src_images.files }}"
+  loop_control:
+    label: "{{ item.path }}"
+  register: gpg_verify
+  failed_when: gpg_verify.rc != 0
+
+- name: Fail if any image signature verification failed
+  ansible.builtin.fail:
+    msg: "One or more GPG signature checks failed."
+  when: gpg_verify.results | selectattr('rc', 'ne', 0) | list | length > 0
+
+# ───────────────────────────────────────────────
+# Stage: Load images
+# ───────────────────────────────────────────────
+
+- name: Find hardened nucleus images
+  ansible.builtin.find:
+    paths: "/var/lib/containers/images"
+    patterns: "nucleus-*.tar.gz"
+  register: found_images
+
+- name: Fail if no nucleus images found
+  ansible.builtin.fail:
+    msg: "No nucleus images found on target host."
+  when: found_images.files | length == 0
+
+- name: Load ALL verified nucleus images
+  ansible.builtin.shell: docker load -i "{{ item.path }}"
+  args:
+    executable: /bin/bash
+  loop: "{{ found_images.files }}"
+  loop_control:
+    label: "{{ item.path }}"
+
+
+[root@ansible-forge tasks]# cd ../defaults/
+[root@ansible-forge defaults]# cat main.yml
+---
+# defaults file for configure_guacamole
+
+avocado_files: "/opt/ansible/files/avocado"
+avocado_artifact_dir: "{{ avocado_files }}/current"
+[root@ansible-forge defaults]# cat ../vars/main.yml
+---
+# vars file for configure_guacamole
+
+# ───────────────────────────────────────────────
+# Deployment Mode (consistent with profile model)
+# ───────────────────────────────────────────────
+# Valid values:
+#   - standalone
+#   - integrated
+deploy_mode: "standalone"
+
+compose_template: >-
+  {{ "docker-compose.yml.j2"
+     if deploy_mode == "standalone"
+     else "docker-compose-grafana-integrated.yml.j2" }}
+
+# ───────────────────────────────────────────────
+# Development Cleanup Toggle (auto derived)
+# ───────────────────────────────────────────────
+dev_clean: "{{ deploy_mode == 'standalone' }}"
+
+# ───────────────────────────────────────────────
+# Connection Profile Selection (consistent model)
+# ───────────────────────────────────────────────
+guac_profile: "ptek"   # switched from default → ptek
+
+guac_profile_sql: "/opt/ansible/files/avocado/guacdb/guac_export_{{ guac_profile }}.sql"
+guac_import_dest: "/var/lib/containers/guacamole/guac_import.sql"
+
+# ───────────────────────────────────────────────
+# Versions
+# ───────────────────────────────────────────────
+guacd_version: "1.6.0"
+guacamole_version: "1.6.0"
+postgres_version: "18.6"
+nginx_version: "1.31.6"
+
+# ───────────────────────────────────────────────
+# Database Settings
+# ───────────────────────────────────────────────
+guac_db_name: "guacamole_db"
+guac_db_user: "guacuser"
+guac_db_pass: "guacpass"
+guac_db_host: "postgres"
+
+postgres_password: "postgrespass"
+
+# ───────────────────────────────────────────────
+# Ports
+# ───────────────────────────────────────────────
+guacamole_port: "8080"
+nginx_port: "443"
+
+# ───────────────────────────────────────────────
+# Networking
+# ───────────────────────────────────────────────
+nginx_networks:
+  - guacnet
+
+extra_networks: []
+
+

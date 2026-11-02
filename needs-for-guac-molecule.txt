@@ -320,4 +320,7 @@ weekly_guac_ccop_guacamole_1_6_0_20261029T181040Z-openscap-results.xml
 weekly_guac_ccop_guacamole_1_6_0.20261029T181040Z.sbom.json
 weekly_guac_ccop_guacamole_1_6_0.20261029T181040Z.vuln.csv
 weekly_guac_ccop_guacamole_1_6_0.20261029T181040Z.vuln.html
+
+
+grep -rn 'guacd_version\|guacamole_version\|postgres_version\|nginx_version' /opt/ansible/nucleus/roles/configure_guacamole --include=*.yml --include=*.j2 | grep -v 'vars/main.yml'
 weekly_guac_ccop_guacamole_1_6_0.20261029T181040Z.vuln.json

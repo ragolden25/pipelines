@@ -1,0 +1,30 @@
+Here’s a task file for weekly_common 
+that signs the weekly images exactly like your 
+quarterly tasks: as root, the same gpg options, .asc files in provenance/<class>/, 
+and the same ownership and mode as the quarterly signatures.
+
+sign_weekly_images.yml goes in 
+/opt/ansible/nucleus/roles/weekly_common/tasks/. It covers both stacks and both 
+classes. It only signs an image that has no signature or is newer than its signature, so 
+running it after every component build costs nothing. I tested it with a stand-in for 
+gpg: the first pass signed every new image, and the second pass correctly found nothing to do.
+
+1. Add it to the weekly builds. Put this at the end of weekly_common/tasks/main.yml, so it runs after scanning, the same order as quarterly:
+
+- name: Sign the weekly images
+  ansible.builtin.include_tasks: sign_weekly_images.yml
+
+I’ve assumed main.yml is what each weekly_build_<component> role runs. If the 
+build actually finishes in finish.yml, put the two lines at the end of that file instead.
+
+2. Sign week 44 once, now. The task only looks at images built in the last 2 days, and 
+week 44’s are from Oct 29. As root:
+
+W=/opt/ansible/files/avocado/weekly/44; for f in $W/images/*.tar.gz; do b=$(basename "$f"); c=${b%%-*}; mkdir -p $W/provenance/$c && gpg --batch --yes --pinentry-mode loopback --detach-sign --output $W/provenance/$c/$b.asc "$f" && chown ansible:ansible $W/provenance/$c/$b.asc && chmod 0770 $W/provenance/$c/$b.asc && echo "signed $b"; done
+
+3. Rerun the test (as root):
+
+su - ansible -c '/opt/ansible/molecule/run-guac16.sh deploy && /opt/ansible/molecule/run-guac16.sh verify'
+
+The prepare step will now find the eight signatures and copy them in, and the role 
+will verify them against ansible.pub the same way it does in production.

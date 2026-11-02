@@ -1,0 +1,39 @@
+---
+# Sign the weekly image tarballs the same way the quarterly builds do (sign_hardened_images.yml /
+# sign_functional_images.yml): as root, detached signature, written to
+#   <weekly root>/<week#>/provenance/<class>/<class>-<name>-<version>.tar.gz.asc
+# Covers both stacks and both classes (nucleus, ccop). Only images built in the last 2 days are
+# looked at, and an image is (re)signed only when it has no signature or is newer than it, so
+# this is safe to include after every weekly component build.
+
+- name: Sign new weekly image tarballs
+  become: true
+  become_user: root
+  ansible.builtin.shell: |
+    for root in {{ weekly_sign_roots | join(' ') }}; do
+      find "$root" -mindepth 3 -maxdepth 3 -path '*/images/*' \( -name 'nucleus-*.tar.gz' -o -name 'ccop-*.tar.gz' \) -mmin -2880 2>/dev/null
+    done | while read -r img; do
+      week=$(dirname "$(dirname "$img")")
+      base=$(basename "$img")
+      cls=${base%%-*}
+      sig="$week/provenance/$cls/$base.asc"
+      if [ ! -f "$sig" ] || [ "$img" -nt "$sig" ]; then
+        mkdir -p "$week/provenance/$cls"
+        gpg --batch --yes --pinentry-mode loopback --detach-sign --output "$sig" "$img" || exit 1
+        chown ansible:ansible "$sig" && chmod 0770 "$sig"
+        echo "signed $sig"
+      fi
+    done
+  args:
+    executable: /bin/bash
+  vars:
+    weekly_sign_roots:
+      - /opt/ansible/files/avocado/weekly
+      - /opt/ansible/files/grafana/weekly
+  register: weekly_sign
+  changed_when: "'signed ' in weekly_sign.stdout"
+
+- name: Weekly signatures written
+  ansible.builtin.debug:
+    msg: "{{ weekly_sign.stdout_lines | default(['nothing new to sign']) }}"
+  when: weekly_sign.stdout_lines | length > 0

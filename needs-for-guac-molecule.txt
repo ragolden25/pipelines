@@ -403,3 +403,20 @@ weekly_guac_ccop_guacamole_1_6_0.20261029T181040Z.vuln.json
 /opt/ansible/nucleus/roles/configure_guacamole/templates/README.md.j2:14:Postgres Version: {{ hostvars[inventory_hostname].postgres_version }}
 /opt/ansible/nucleus/roles/configure_guacamole/templates/README.md.j2:15:NGINX Version: {{ hostvars[inventory_hostname].nginx_version }}
 -bash: weekly_guac_ccop_guacamole_1_6_0.20261029T181040Z.vuln.json: command not found
+
+
+
+
+That only affects documentation, but it means every deployment’s README says nginx 1.31.6 regardless of what’s actually running. Here are the two fixes (as ansible). Both keep a backup.
+
+1. README: use the same version variables the compose file uses
+
+sed -i.bak -E 's/\{\{ hostvars\[inventory_hostname\]\.(guacamole|guacd|postgres|nginx)_version \}\}/{{ \U\1\E_VERSION }}/' /opt/ansible/nucleus/roles/configure_guacamole/templates/README.md.j2
+
+2. Remove the pinned versions from vars/main.yml
+
+sed -i.bak '/^# Versions$/,/^nginx_version:/d' /opt/ansible/nucleus/roles/configure_guacamole/vars/main.yml
+
+This deletes the # Versions heading and the four version lines. The # ─── divider line above the heading stays, which is harmless. Check the result with grep -n version /opt/ansible/nucleus/roles/configure_guacamole/vars/main.yml, which should print nothing.
+
+I’ve assumed the uppercase version variables are available to all of the role’s templates, since docker-compose.yml.j2 uses them the same way. If README generation errors with an undefined variable, restore it with mv README.md.j2.bak README.md.j2 and paste the error.

@@ -1,0 +1,1 @@
+f=$(grep -l 'version="3.16.0"' /var/lib/node_exporter/textfile/pipeline_*.prom | head -1) && eval "$(awk -F'[{},="]+' '/^pipeline_expected_interval_seconds/ {print "t="$3" g="$5" i="$NF}' "$f")" && /usr/local/bin/emit_event.sh "$t" "$g" success 3.15.1 "$i" && grep -h 'pipeline_info\|last_status' "$f"

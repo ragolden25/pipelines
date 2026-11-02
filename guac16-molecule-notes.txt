@@ -62,7 +62,7 @@ log: /opt/ansible/molecule/logs/guac16-deploy-2026-11-02-1049.log (exit 2)
 
 Attempt #2. I winscp'd the new file and ran the command you gave me. It says that it's still trying to sign the images vice verify signatures.
 
-[root@ansible-forge ansible]# tar -czf /root/molecule-scripts-backup-$(date +%F).tar.gz -C /opt/ansible molecule/run-grafana12.sh molecule/run-grafana12-image.sh nucleus/playbooks/play_weekly_molecule.sh
+[root@ansible-forge ansible]# tar -czf molecule-scripts.tar.gz -C /opt/ansible molecule/run-grafana12.sh molecule/run-grafana12-image.sh nucleus/playbooks/play_weekly_molecule.sh
 cd /opt/ansible/nucleus/roles/configure_guacamole && tar -czf /root/configure_guacamole-backup-$(date +%F).tar.gz defaults vars tasks templates
 tar -xzf /root/guac16-molecule.tar.gz -C /
 chown -R ansible:ansible-admin /opt/ansible/nucleus/roles/configure_guacamole /opt/ansible/molecule/run-*.sh /opt/ansible/nucleus/playbooks/play_weekly_molecule.sh

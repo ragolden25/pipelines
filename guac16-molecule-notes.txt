@@ -1,5 +1,7 @@
-tar -xzf guac16-molecule.tar.gz -C /
-chown -R ansible:ansible-admin /opt/ansible/nucleus/roles/configure_guacamole/molecule /opt/ansible/molecule/run-guac16.sh /opt/ansible/nucleus/playbooks/play_weekly_molecule.sh
+tar -czf /root/molecule-scripts-backup-$(date +%F).tar.gz -C /opt/ansible molecule/run-grafana12.sh molecule/run-grafana12-image.sh nucleus/playbooks/play_weekly_molecule.sh
+cd /opt/ansible/nucleus/roles/configure_guacamole && tar -czf /root/configure_guacamole-backup-$(date +%F).tar.gz defaults vars tasks templates
+tar -xzf /root/guac16-molecule.tar.gz -C /
+chown -R ansible:ansible-admin /opt/ansible/nucleus/roles/configure_guacamole /opt/ansible/molecule/run-*.sh /opt/ansible/nucleus/playbooks/play_weekly_molecule.sh
 su - ansible -c '/opt/ansible/molecule/run-guac16.sh deploy && /opt/ansible/molecule/run-guac16.sh verify'
 
 

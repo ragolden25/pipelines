@@ -4,3 +4,21 @@ pgrep -af 'play_weekly_builds|play_weekly_molecule|molecule (test|converge|verif
 [root@ansible-forge ansible]# pgrep -af 'play_weekly_builds|play_weekly_molecule|molecule (test|converge|verify)'
 1310349 /bin/bash ./play_weekly_molecule.sh
 1310367 /opt/ansible/molecule/venv/bin/python3.11 /opt/ansible/molecule/venv/bin/molecule test -s grafana12
+
+kill 1310367 1310349; sleep 5; pgrep -af 'play_weekly_molecule|molecule (test|converge|verify)'; docker rm -f std1 2>/dev/null; true
+
+The pgrep should print nothing. The docker rm removes the scenario’s helper container if the hang left it behind.
+
+2. See where it hung. The end of its log will show the last task it started:
+
+tail -25 "$(ls -t /opt/ansible/molecule/logs/grafana12-2*.log | head -1)"
+
+3. Make sure a hang can’t block a week again. This adds a one-hour limit to every 
+Molecule step in the three runner scripts. After an hour the test is killed, its cleanup 
+still runs, and it reports FAILED:
+
+sed -i -E 's/^([[:space:]]*)molecule (test|converge|verify) /\1timeout --kill-after=120 ${MOL_TIMEOUT:-3600} molecule \2 /' /opt/ansible/molecule/run-grafana12.sh /opt/ansible/molecule/run-grafana12-image.sh /opt/ansible/molecule/run-guac16.sh
+grep -n 'timeout' /opt/ansible/molecule/run-*.sh
+
+The grep should show four lines: one in each Grafana runner and two in the Guacamole runner.
+Then run the migration script; the active-run check will pass.

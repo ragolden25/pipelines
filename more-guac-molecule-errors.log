@@ -515,6 +515,35 @@ weekly/guac/nucleus/postgres:18.6     d2b1a3809c93        206MB             0B
 grep -rn 'weekly/' /opt/ansible/nucleus/roles/weekly_* --include=*.yml | grep -v -e '/weekly/[0-9]' -e 'files/.*/weekly'
 
 
+[ansible@ansible-forge ~]$ grep -rn 'weekly/' /opt/ansible/nucleus/roles/weekly_* --include=*.yml | grep -v -e '/weekly/[0-9]' -e 'files/.*/weekly'
+/opt/ansible/nucleus/roles/weekly_build_grafana/defaults/main.yml:5:  stack: grafana                    # image prefix weekly/<stack>/
+/opt/ansible/nucleus/roles/weekly_build_grafana/defaults/main.yml:7:  files_root: grafana                # under {{ weekly_files_root }}; weekly scans go to <files_root>/weekly/<week>
+/opt/ansible/nucleus/roles/weekly_build_guacamole/defaults/main.yml:5:  stack: guac                    # image prefix weekly/<stack>/
+/opt/ansible/nucleus/roles/weekly_build_guacamole/defaults/main.yml:7:  files_root: avocado                # under {{ weekly_files_root }}; weekly scans go to <files_root>/weekly/<week>
+/opt/ansible/nucleus/roles/weekly_build_guacd/defaults/main.yml:5:  stack: guac                    # image prefix weekly/<stack>/
+/opt/ansible/nucleus/roles/weekly_build_guacd/defaults/main.yml:7:  files_root: avocado                # under {{ weekly_files_root }}; weekly scans go to <files_root>/weekly/<week>
+/opt/ansible/nucleus/roles/weekly_build_idrac/defaults/main.yml:5:  stack: grafana                    # image prefix weekly/<stack>/
+/opt/ansible/nucleus/roles/weekly_build_idrac/defaults/main.yml:7:  files_root: grafana                # under {{ weekly_files_root }}; weekly scans go to <files_root>/weekly/<week>
+/opt/ansible/nucleus/roles/weekly_build_nginx_grafana/defaults/main.yml:5:  stack: grafana                    # image prefix weekly/<stack>/
+/opt/ansible/nucleus/roles/weekly_build_nginx_grafana/defaults/main.yml:7:  files_root: grafana                # under {{ weekly_files_root }}; weekly scans go to <files_root>/weekly/<week>
+/opt/ansible/nucleus/roles/weekly_build_nginx_guac/defaults/main.yml:5:  stack: guac                    # image prefix weekly/<stack>/
+/opt/ansible/nucleus/roles/weekly_build_nginx_guac/defaults/main.yml:7:  files_root: avocado                # under {{ weekly_files_root }}; weekly scans go to <files_root>/weekly/<week>
+/opt/ansible/nucleus/roles/weekly_build_postgres/defaults/main.yml:5:  stack: guac                    # image prefix weekly/<stack>/
+/opt/ansible/nucleus/roles/weekly_build_postgres/defaults/main.yml:7:  files_root: avocado                # under {{ weekly_files_root }}; weekly scans go to <files_root>/weekly/<week>
+/opt/ansible/nucleus/roles/weekly_build_prometheus/defaults/main.yml:5:  stack: grafana                    # image prefix weekly/<stack>/
+/opt/ansible/nucleus/roles/weekly_build_prometheus/defaults/main.yml:7:  files_root: grafana                # under {{ weekly_files_root }}; weekly scans go to <files_root>/weekly/<week>
+/opt/ansible/nucleus/roles/weekly_common/defaults/main.yml:6:#   <build dir>/weekly/<quarter>/<week>/          working copy of the quarter build dir
+/opt/ansible/nucleus/roles/weekly_common/defaults/main.yml:7:#   <files root>/weekly/<week>/provenance/<class> weekly scan results (never a quarter dir)
+/opt/ansible/nucleus/roles/weekly_common/defaults/main.yml:8:#   images  weekly/<stack>/<ccop|nucleus>/<image>:<version>   (removed after the run)
+/opt/ansible/nucleus/roles/weekly_common/tasks/context.yml:22:    weekly_ns: "weekly/{{ weekly_component.stack }}/"
+/opt/ansible/nucleus/roles/weekly_common/tasks/context.yml:27:    weekly_wdir: "{{ weekly_comp_build }}/weekly/{{ weekly_q }}/{{ weekly_w }}"
+/opt/ansible/nucleus/roles/weekly_common/tasks/context.yml:28:    weekly_fdir: "{{ weekly_files_root }}/{{ weekly_component.files_root }}/weekly/{{ weekly_w }}"
+/opt/ansible/nucleus/roles/weekly_common/tasks/scan_image.yml:2:# Weekly scan of weekly/<stack>/<class>/<image>:<version>. Same steps as the quarterly scan, but the
+/opt/ansible/nucleus/roles/weekly_common/tasks/scan_image.yml:3:# results go to <files root>/weekly/<week>/provenance/<class> and never into a quarter directory.
+/opt/ansible/nucleus/roles/weekly_common/tasks/render_weekly_compose.yml:4:#   weekly/<week#>/docker-compose.yml        hardened, nucleus images  (identical to a quarterly render)
+/opt/ansible/nucleus/roles/weekly_common/tasks/render_weekly_compose.yml:5:#   weekly/<week#>/docker-compose-ccop.yml   same stack, ccop images, hardening off (functional testing)
+/opt/ansible/nucleus/roles/weekly_common/tasks/render_weekly_compose.yml:6:#   weekly/<week#>/.env
+/opt/ansible/nucleus/roles/weekly_common/tasks/render_weekly_compose.yml:20:    week=$(ls -td {{ guac_build_vars.guac_files }}/weekly/*/images 2>/dev/null | head -1)
 
 
 

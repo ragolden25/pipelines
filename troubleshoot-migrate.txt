@@ -47,5 +47,12 @@ still runs, and it reports FAILED:
 sed -i -E 's/^([[:space:]]*)molecule (test|converge|verify) /\1timeout --kill-after=120 ${MOL_TIMEOUT:-3600} molecule \2 /' /opt/ansible/molecule/run-grafana12.sh /opt/ansible/molecule/run-grafana12-image.sh /opt/ansible/molecule/run-guac16.sh
 grep -n 'timeout' /opt/ansible/molecule/run-*.sh
 
+[root@ansible-forge ansible]# sed -i -E 's/^([[:space:]]*)molecule (test|converge|verify) /\1timeout --kill-after=120 ${MOL_TIMEOUT:-3600} molecule \2 /' /opt/ansible/molecule/run-grafana12.sh /opt/ansible/molecule/run-grafana12-image.sh /opt/ansible/molecule/run-guac16.sh
+grep -n 'timeout' /opt/ansible/molecule/run-*.sh
+/opt/ansible/molecule/run-grafana12-image.sh:23:timeout --kill-after=120 ${MOL_TIMEOUT:-3600} molecule test -s grafana12-image 2>&1 | tee "$LOG"
+/opt/ansible/molecule/run-grafana12.sh:10:timeout --kill-after=120 ${MOL_TIMEOUT:-3600} molecule test -s grafana12 2>&1 | tee "$LOG"
+/opt/ansible/molecule/run-guac16.sh:31:  timeout --kill-after=120 ${MOL_TIMEOUT:-3600} molecule converge -s guac16 2>&1 | tee "$LOG"
+/opt/ansible/molecule/run-guac16.sh:35:  timeout --kill-after=120 ${MOL_TIMEOUT:-3600} molecule verify -s guac16 2>&1 | tee "$LOG"
+
 The grep should show four lines: one in each Grafana runner and two in the Guacamole runner.
 Then run the migration script; the active-run check will pass.

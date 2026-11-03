@@ -546,6 +546,7 @@ grep -rn 'weekly/' /opt/ansible/nucleus/roles/weekly_* --include=*.yml | grep -v
 /opt/ansible/nucleus/roles/weekly_common/tasks/render_weekly_compose.yml:20:    week=$(ls -td {{ guac_build_vars.guac_files }}/weekly/*/images 2>/dev/null | head -1)
 
 
-
+sed -i 's|weekly_ns: "weekly/{{ weekly_component.stack }}/"|weekly_ns: ""|' /opt/ansible/nucleus/roles/weekly_common/tasks/context.yml
+grep -n 'weekly_ns:' /opt/ansible/nucleus/roles/weekly_common/tasks/context.yml
 
 

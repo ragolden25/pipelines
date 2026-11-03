@@ -1,0 +1,18 @@
+Everything since then (the week’s own compose file, the naming fix in context.yml and the rebuild) came after this log. So either you’ve pasted an older log, or the new run hasn’t happened yet. This shows the newest Guacamole logs and their times (as ansible):
+
+ls -lt /opt/ansible/molecule/logs/guac16-* | head -4
+
+How success is measured for the dashboard. Copying, verifying and loading the images is only the first part of a deploy. Each row means:
+
+Row	Turns green when
+ccop images	the whole role deploys ccop and the live stack passes every check
+Deployment role	the whole role deploys nucleus without a failed task, including postgres starting, the database import, and the stack start
+nucleus images	the live nucleus stack passes every check
+
+The checks on the live stack are: all four containers running on this week’s versions and the right class; every extension jar loaded, PostgreSQL auth included; guacadmin logging in; 30 connections in the database; guacd answering on 4822; and Guacamole reachable through nginx over TLS. So far no run has got past starting postgres, so none of those checks has run yet.
+
+Troubleshooting postgres, if it fails again on a new run. It’s always the same question: does the name the compose file asks for match an image that’s loaded? This shows both sides on the guac VM at once (as ansible):
+
+ansible guac -i /home/ansible/inventory.ini -b -m shell -a "grep 'image:' /var/lib/containers/compose/docker-compose.yml; echo ---; docker images --format '{{ '{{' }}.Repository{{ '}}' }}:{{ '{{' }}.Tag{{ '}}' }}'"
+
+If the two lists match and it still fails, the cause is something else, and the error will say what.

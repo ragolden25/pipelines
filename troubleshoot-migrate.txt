@@ -40,6 +40,9 @@ skipping: [localhost]
 
 TASK [Build an Ansible compatible image (new)] *********************************
 
+2a. Kill the tasks!
+pkill -f play_weekly_molecule.sh; pkill -f '/opt/ansible/molecule/venv/bin/'; sleep 5; docker rm -f std1 >/dev/null 2>&1; pgrep -af 'play_weekly_builds|play_weekly_molecule|molecule (test|converge|verify)' || echo "nothing running"
+
 3. Make sure a hang can’t block a week again. This adds a one-hour limit to every 
 Molecule step in the three runner scripts. After an hour the test is killed, its cleanup 
 still runs, and it reports FAILED:

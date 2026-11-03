@@ -494,3 +494,10 @@ guac                       : ok=65   changed=33   unreachable=0    failed=1    s
 
 CRITICAL Ansible return code was 2, command was: ansible-playbook --extra-vars 'avocado_artifact_dir=/opt/ansible/molecule/scratch/guacamole/artifact guac_image_class=nucleus' --inventory /opt/ansible/molecule/cache/molecule/configure_guacamole/guac16/inventory --skip-tags molecule-notest,notest /opt/ansible/nucleus/roles/configure_guacamole/molecule/guac16/converge.yml
 log: /opt/ansible/molecule/logs/guac16-nucleus-deploy-2026-11-03-1259.log (exit 2)
+
+
+
+for f in /opt/ansible/files/avocado/weekly/45/images/*-postgres-*.tar.gz; do echo "$(basename $f): $(tar -xzOf $f manifest.json | python3 -c 'import json,sys; print(json.load(sys.stdin)[0]["RepoTags"])')"; done; ansible guac -i /home/ansible/inventory.ini -b -m shell -a "docker images | grep -i postgres"
+
+
+

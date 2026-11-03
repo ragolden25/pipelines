@@ -91,4 +91,4 @@ grep -n 'run play_weekly_molecule.sh as ansible' /opt/ansible/nucleus/playbooks/
 
 
 cd /opt/ansible/molecule/logs && for p in 'guac16-ccop-deploy' 'guac16-nucleus-deploy'; do f=$(ls -t ${p}*.log 2>/dev/null | head -1); echo "===== $f"; grep -n -B3 -A12 -m1 -E 'fatal:|FAILED!|ERROR!|CRITICAL' "$f" | cut -c1-400; done
-signed nucleus-prometheus-3.15.1.tar.gz
+

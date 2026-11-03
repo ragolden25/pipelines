@@ -1,1 +1,6 @@
 pgrep -af 'play_weekly_builds|play_weekly_molecule|molecule (test|converge|verify)'
+
+
+[root@ansible-forge ansible]# pgrep -af 'play_weekly_builds|play_weekly_molecule|molecule (test|converge|verify)'
+1310349 /bin/bash ./play_weekly_molecule.sh
+1310367 /opt/ansible/molecule/venv/bin/python3.11 /opt/ansible/molecule/venv/bin/molecule test -s grafana12

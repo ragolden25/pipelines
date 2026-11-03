@@ -149,3 +149,12 @@ included: /opt/ansible/nucleus/roles/configure_guacamole/tasks/dev-cleanup.yml f
 TASK [/opt/ansible/nucleus/roles/configure_guacamole : Stop all containers] ****
 changed: [guac]
 
+
+
+This shows the name stored in each weekly postgres image file, and what’s actually loaded on the guac VM (as ansible):
+
+for f in /opt/ansible/files/avocado/weekly/45/images/*-postgres-*.tar.gz; do echo "$(basename $f): $(tar -xzOf $f manifest.json | python3 -c 'import json,sys; print(json.load(sys.stdin)[0]["RepoTags"])')"; done; ansible guac -i /home/ansible/inventory.ini -b -m shell -a "docker images | grep -i postgres"
+
+I expect something like nucleus/postgres18:18.6, or a name without the nucleus/ prefix. The fix then goes in the weekly postgres build’s image name, so it matches nucleus_postgres_image / ccop_postgres_image from your build defaults, rather than in the compose file. Paste the output and I’ll point to the exact line.
+
+

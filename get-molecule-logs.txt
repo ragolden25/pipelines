@@ -114,3 +114,9 @@ cd /opt/ansible/molecule/logs && for p in 'guac16-ccop-deploy' 'guac16-nucleus-d
 246-guac                       : ok=46   changed=23   unreachable=0    failed=1    skipped=4    rescued=0    ignored=0
 247-
 248-CRITICAL Ansible return code was 2, command was: ansible-playbook --extra-vars 'avocado_artifact_dir=/opt/ansible/molecule/scratch/guacamole/artifact guac_image_class=nucleus' --inventory /opt/ansible/molecule/cache/molecule/configure_guacamole/guac16/inventory --skip-tags molecule-notest,notest /opt/ansible/nucleus/roles/configure_guacamole/molecule/guac16/converge.yml
+
+
+sed -i 's|ln -sf "$f" "{{ art }}/images/|cp -p "$f" "{{ art }}/images/|' /opt/ansible/nucleus/roles/configure_guacamole/molecule/guac16/prepare.yml
+grep -n 'cp -p' /opt/ansible/nucleus/roles/configure_guacamole/molecule/guac16/prepare.yml
+
+/opt/ansible/molecule/run-guac16.sh deploy ccop && /opt/ansible/molecule/run-guac16.sh verify ccop; /opt/ansible/molecule/run-guac16.sh deploy && /opt/ansible/molecule/run-guac16.sh verify

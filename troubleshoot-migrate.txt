@@ -81,3 +81,8 @@ Then run the migration script; the active-run check will pass.
     /dev/mapper/vg00-opt       100G   66G   35G  66% /opt
     /dev/mapper/vg02-molecule  1.0T   77G  948G   8% /opt/ansible/molecule
 
+
+Now onto Prometheus weekly build. Remove the week 45 directory and run the stage script again.
+
+d=/opt/ansible/staged/prometheus/3.16.0; ls -la $d/staged 2>&1; [ -d $d ] && [ -z "$(ls -A $d/staged 2>/dev/null)" ] && rm -rf $d && echo "removed empty $d"
+

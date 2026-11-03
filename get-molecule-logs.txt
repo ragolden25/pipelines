@@ -123,5 +123,17 @@ grep -n 'cp -p' /opt/ansible/nucleus/roles/configure_guacamole/molecule/guac16/p
 grep -n 'cp -p' /opt/ansible/nucleus/roles/configure_guacamole/molecule/guac16/prepare.yml
 66:          cp -p "$f" "{{ art }}/images/$(basename "$f")"
 
+This ran the deployment twice! I watched it deploy once and then do scenario cleanup and then deploy again but maybe that's for ccop and then nucleus images. In both images were gpg verified and then loaded but dashboard still reports that ccop images fail, nucleus not reported and deployment role fails. I didn't see failures in the first deployment.
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Start Postgres servly] ***
+fatal: [guac]: FAILED! => {"changed": true, "cmd": "docker compose -f /varontainers/compose/docker-compose.yml up -d postgres\n", "delta": "0:00:15.", "end": "2026-11-03 11:09:31.384392", "msg": "non-zero return code", "rc"start": "2026-11-03 11:09:16.265487", "stderr": " Image nucleus/postgres:ulling \n Image nucleus/postgres:18.6 Error Get \"https://registry-1.docke2/\": context deadline exceeded (Client.Timeout exceeded while awaiting he\nError response from daemon: Get \"https://registry-1.docker.io/v2/\": codeadline exceeded (Client.Timeout exceeded while awaiting headers)", "stdees": [" Image nucleus/postgres:18.6 Pulling ", " Image nucleus/postgres:18or Get \"https://registry-1.docker.io/v2/\": context deadline exceeded (Climeout exceeded while awaiting headers)", "Error response from daemon: Getps://registry-1.docker.io/v2/\": context deadline exceeded (Client.Timeoutded while awaiting headers)"], "stdout": "", "stdout_lines": []}
+
+PLAY RECAP ***************************************************************
+guac                       : ok=65   changed=32   unreachable=0    failed=kipped=3    rescued=0    ignored=0
+
+CRITICAL Ansible return code was 2, command was: ansible-playbook --extra-avocado_artifact_dir=/opt/ansible/molecule/scratch/guacamole/artifact guac_class=nucleus' --inventory /opt/ansible/molecule/cache/molecule/configuremole/guac16/inventory --skip-tags molecule-notest,notest /opt/ansible/nuclles/configure_guacamole/molecule/guac16/converge.yml
+log: /opt/ansible/molecule/logs/guac16-nucleus-deploy-2026-11-03-1118.log 2)
+
+
 
 /opt/ansible/molecule/run-guac16.sh deploy ccop && /opt/ansible/molecule/run-guac16.sh verify ccop; /opt/ansible/molecule/run-guac16.sh deploy && /opt/ansible/molecule/run-guac16.sh verify

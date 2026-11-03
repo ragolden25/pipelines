@@ -3,6 +3,25 @@ tar -xzf /home/ansible/guac-compose-weekly.tar.gz -C /
 rm -f /opt/ansible/nucleus/roles/configure_guacamole/templates/docker-compose-ccop.yml.j2
 chown -R ansible:ansible-admin /opt/ansible/files/avocado/docker-compose.yml.j2 /opt/ansible/nucleus/roles/weekly_common /opt/ansible/nucleus/roles/configure_guacamole /opt/ansible/nucleus/playbooks/render_weekly_compose_now.yml
 
+I'm having a heck of a time with this previous set of commands!!!
+
+[root@ansible-forge ~]# tar -czf /root/pre-compose-backup-$(date +%F).tar.gz -C / opt/ansible/files/avocado/docker-compose.yml.j2 opt/ansible/nucleus/roles/weekly_common/tasks opt/ansible/nucleus/roles/configure_guacamole/vars opt/ansible/nucleus/roles/configure_guacamole/molecule/guac16/prepare.yml
+tar -xzf /home/ansible/guac-compose-weekly.tar.gz -C /
+rm -f /opt/ansible/nucleus/roles/configure_guacamole/templates/docker-compose-ccop.yml.j2
+chown -R ansible:ansible-admin /opt/ansible/files/avocado/docker-compose.yml.j2 /opt/ansible/nucleus/roles/weekly_common /opt/ansible/nucleus/roles/configure_guacamole /opt/ansible/nucleus/playbooks/render_weekly_compose_now.yml
+
+tar (child): /home/ansible/guac-compose-weekly.tar.gz: Cannot open: No such file or directory
+tar (child): Error is not recoverable: exiting now
+tar: Child returned status 2
+tar: Error is not recoverable: exiting now
+chown: cannot access '/opt/ansible/nucleus/playbooks/render_weekly_compose_now.yml': No such file or directory
+[root@ansible-forge ~]# mv guac-compose-weekly.tar.gz /home/ansible/
+[root@ansible-forge ~]# cd /home/ansible/
+[root@ansible-forge ansible]# chown ansible:ansible guac-compose-weekly.tar.gz
+[root@ansible-forge ansible]# chown -R ansible:ansible-admin /opt/ansible/files/avocado/docker-compose.yml.j2 /opt/ansible/nucleus/roles/weekly_common /opt/ansible/nucleus/roles/configure_guacamole /opt/ansible/nucleus/playbooks/render_weekly_compose_now.yml
+chown: cannot access '/opt/ansible/nucleus/playbooks/render_weekly_compose_now.yml': No such file or directory
+
+
 
 The rm removes the ccop template I’d added to the role, which isn’t used. Retire your old functional template however you like; renaming it to .retired keeps it for reference.
 

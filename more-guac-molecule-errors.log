@@ -1,0 +1,496 @@
+Failure with the hardened guac deployment as well!
+
+INFO     Running guac16 > converge
+
+PLAY [Converge] ****************************************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [guac]
+
+TASK [Deploy the Guacamole stack] **********************************************
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Execute environmental bootstrap and file staging] ***
+included: /opt/ansible/nucleus/roles/configure_guacamole/tasks/stage-environment.yml for guac
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Resolve the 'current' quarter symlink] ***
+included: /opt/ansible/nucleus/roles/configure_guacamole/tasks/symlink-current.yml for guac
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Find quarter directories present on this control node] ***
+ok: [guac -> localhost]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Fail if no quarter directories found] ***
+skipping: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Point 'current' symlink at the latest quarter directory present] ***
+ok: [guac -> localhost]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Full Docker teardown (dev_clean)] ***
+included: /opt/ansible/nucleus/roles/configure_guacamole/tasks/dev-cleanup.yml for guac
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Stop all containers] ****
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Remove all containers] ***
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Remove all Docker images] ***
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Remove all Docker volumes] ***
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Remove all Docker networks except defaults] ***
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Remove runtime container directories] ***
+changed: [guac] => (item=/var/lib/containers/guacamole)
+changed: [guac] => (item=/var/lib/containers/postgres)
+changed: [guac] => (item=/var/lib/containers/nginx)
+changed: [guac] => (item=/var/lib/containers/images)
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Create base and hardened container directories] ***
+included: /opt/ansible/nucleus/roles/configure_guacamole/tasks/directory-setup.yml for guac
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Ensure containers directory exists] ***
+ok: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Ensure images directory exists] ***
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Ensure dockerfiles directory exists] ***
+ok: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Ensure Guacamole directories exist] ***
+changed: [guac] => (item=)
+changed: [guac] => (item=extensions)
+changed: [guac] => (item=lib)
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Ensure Postgres directory exists] ***
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Ensure Nginx directories exist] ***
+changed: [guac] => (item=)
+changed: [guac] => (item=conf.d)
+changed: [guac] => (item=certs)
+changed: [guac] => (item=cache)
+changed: [guac] => (item=log)
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Create DHI-style nginx temp directories] ***
+changed: [guac] => (item=client_temp)
+changed: [guac] => (item=proxy_temp)
+changed: [guac] => (item=fastcgi_temp)
+changed: [guac] => (item=uwsgi_temp)
+changed: [guac] => (item=scgi_temp)
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Generate DH params file] ***
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Stage compose files] ****
+included: /opt/ansible/nucleus/roles/configure_guacamole/tasks/compose-setup.yml for guac
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Ensure compose directory exists] ***
+ok: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Copy docker-compose.yml] ***
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Create run.sh] **********
+ok: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Create stop.sh] *********
+ok: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Fix permissions and copy postgres/nginx configs] ***
+included: /opt/ansible/nucleus/roles/configure_guacamole/tasks/permissions-and-configs.yml for guac
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Fix Guacamole permissions] ***
+ok: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Fix Postgres permissions] ***
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Copy postgresql.conf] ***
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Copy pg_hba.conf] *******
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Fix Nginx permissions] ***
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Copy nginx.conf] ********
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Ensure ssl-dhparams.pem readable by nginx] ***
+ok: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Copy mime.types] ********
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Copy guacamole.conf] ****
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Copy cert] **************
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Copy certificate key] ***
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Stage, verify, and load nucleus images] ***
+included: /opt/ansible/nucleus/roles/configure_guacamole/tasks/nucleus-images.yml for guac
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Find nucleus images in avocado files] ***
+ok: [guac -> localhost]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Copy nucleus images to target host] ***
+changed: [guac] => (item=/opt/ansible/molecule/scratch/guacamole/artifact/images/nucleus-guacd-1.6.0.tar.gz)
+changed: [guac] => (item=/opt/ansible/molecule/scratch/guacamole/artifact/images/nucleus-guacamole-1.6.0.tar.gz)
+changed: [guac] => (item=/opt/ansible/molecule/scratch/guacamole/artifact/images/nucleus-postgres-18.6.tar.gz)
+changed: [guac] => (item=/opt/ansible/molecule/scratch/guacamole/artifact/images/nucleus-nginx-1.31.8.tar.gz)
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Ensure gpgkeys directory exists] ***
+ok: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Copy GPG public key] ****
+ok: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Import GPG public key] ***
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Find nucleus signature files] ***
+ok: [guac -> localhost]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Copy nucleus signature files to target host] ***
+changed: [guac] => (item=/opt/ansible/molecule/scratch/guacamole/artifact/provenance/nucleus/nucleus-guacamole-1.6.0.tar.gz.asc)
+changed: [guac] => (item=/opt/ansible/molecule/scratch/guacamole/artifact/provenance/nucleus/nucleus-guacd-1.6.0.tar.gz.asc)
+changed: [guac] => (item=/opt/ansible/molecule/scratch/guacamole/artifact/provenance/nucleus/nucleus-nginx-1.31.8.tar.gz.asc)
+changed: [guac] => (item=/opt/ansible/molecule/scratch/guacamole/artifact/provenance/nucleus/nucleus-postgres-18.6.tar.gz.asc)
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Verify GPG signatures for all nucleus images] ***
+changed: [guac] => (item=/opt/ansible/molecule/scratch/guacamole/artifact/images/nucleus-guacd-1.6.0.tar.gz)
+changed: [guac] => (item=/opt/ansible/molecule/scratch/guacamole/artifact/images/nucleus-guacamole-1.6.0.tar.gz)
+changed: [guac] => (item=/opt/ansible/molecule/scratch/guacamole/artifact/images/nucleus-postgres-18.6.tar.gz)
+changed: [guac] => (item=/opt/ansible/molecule/scratch/guacamole/artifact/images/nucleus-nginx-1.31.8.tar.gz)
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Fail if any image signature verification failed] ***
+skipping: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Find hardened nucleus images] ***
+ok: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Fail if no nucleus images found] ***
+skipping: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Load ALL verified nucleus images] ***
+changed: [guac] => (item=/var/lib/containers/images/nucleus-guacd-1.6.0.tar.gz)
+changed: [guac] => (item=/var/lib/containers/images/nucleus-guacamole-1.6.0.tar.gz)
+changed: [guac] => (item=/var/lib/containers/images/nucleus-postgres-18.6.tar.gz)
+changed: [guac] => (item=/var/lib/containers/images/nucleus-nginx-1.31.8.tar.gz)
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Stage Guacamole application files] ***
+included: /opt/ansible/nucleus/roles/configure_guacamole/tasks/guacamole-app-files.yml for guac
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Ensure Guacamole directories exist] ***
+changed: [guac] => (item=extensions)
+changed: [guac] => (item=lib)
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Copy Guacamole JDBC extension] ***
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Copy PostgreSQL JDBC driver] ***
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Copy guacamole.properties] ***
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Set ownership for Guacamole directory] ***
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Ensure fonts directory exists for guacd] ***
+ok: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Copy DejaVuSansMono.ttf for guacd] ***
+ok: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Configure firewall] *****
+[WARNING]: Collection ansible.posix does not support Ansible version 2.15.13
+included: /opt/ansible/nucleus/roles/configure_guacamole/tasks/firewall.yml for guac
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Ensure firewalld Python bindings are installed] ***
+ok: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Ensure firewalld is installed] ***
+ok: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Ensure firewalld is running] ***
+ok: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Allow HTTP/HTTPS] *******
+ok: [guac] => (item=http)
+ok: [guac] => (item=https)
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Add Guacamole-related ports] ***
+ok: [guac] => (item=4822/tcp)
+ok: [guac] => (item=5432/tcp)
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Bootstrap Postgres and import Guacamole database dump] ***
+included: /opt/ansible/nucleus/roles/configure_guacamole/tasks/db-import.yml for guac
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Stop existing stack] ****
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Start Postgres service only] ***
+fatal: [guac]: FAILED! => {"changed": true, "cmd": "docker compose -f /var/lib/containers/compose/docker-compose.yml up -d postgres\n", "delta": "0:00:15.119555", "end": "2026-11-03 12:51:04.486634", "msg": "non-zero return code", "rc": 1, "start": "2026-11-03 12:50:49.367079", "stderr": " Image nucleus/postgres:18.6 Pulling \n Image nucleus/postgres:18.6 Error Get \"https://registry-1.docker.io/v2/\": context deadline exceeded (Client.Timeout exceeded while awaiting headers)\nError response from daemon: Get \"https://registry-1.docker.io/v2/\": context deadline exceeded (Client.Timeout exceeded while awaiting headers)", "stderr_lines": [" Image nucleus/postgres:18.6 Pulling ", " Image nucleus/postgres:18.6 Error Get \"https://registry-1.docker.io/v2/\": context deadline exceeded (Client.Timeout exceeded while awaiting headers)", "Error response from daemon: Get \"https://registry-1.docker.io/v2/\": context deadline exceeded (Client.Timeout exceeded while awaiting headers)"], "stdout": "", "stdout_lines": []}
+
+PLAY RECAP *********************************************************************
+guac                       : ok=65   changed=33   unreachable=0    failed=1    skipped=3    rescued=0    ignored=0
+
+CRITICAL Ansible return code was 2, command was: ansible-playbook --extra-vars 'avocado_artifact_dir=/opt/ansible/molecule/scratch/guacamole/artifact guac_image_class=nucleus' --inventory /opt/ansible/molecule/cache/molecule/configure_guacamole/guac16/inventory --skip-tags molecule-notest,notest /opt/ansible/nucleus/roles/configure_guacamole/molecule/guac16/converge.yml
+log: /opt/ansible/molecule/logs/guac16-nucleus-deploy-2026-11-03-1259.log (exit 2)
+INFO     Running guac16 > converge
+
+PLAY [Converge] ****************************************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [guac]
+
+TASK [Deploy the Guacamole stack] **********************************************
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Execute environmental bootstrap and file staging] ***
+included: /opt/ansible/nucleus/roles/configure_guacamole/tasks/stage-environment.yml for guac
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Resolve the 'current' quarter symlink] ***
+included: /opt/ansible/nucleus/roles/configure_guacamole/tasks/symlink-current.yml for guac
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Find quarter directories present on this control node] ***
+ok: [guac -> localhost]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Fail if no quarter directories found] ***
+skipping: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Point 'current' symlink at the latest quarter directory present] ***
+ok: [guac -> localhost]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Full Docker teardown (dev_clean)] ***
+included: /opt/ansible/nucleus/roles/configure_guacamole/tasks/dev-cleanup.yml for guac
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Stop all containers] ****
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Remove all containers] ***
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Remove all Docker images] ***
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Remove all Docker volumes] ***
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Remove all Docker networks except defaults] ***
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Remove runtime container directories] ***
+changed: [guac] => (item=/var/lib/containers/guacamole)
+changed: [guac] => (item=/var/lib/containers/postgres)
+changed: [guac] => (item=/var/lib/containers/nginx)
+changed: [guac] => (item=/var/lib/containers/images)
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Create base and hardened container directories] ***
+included: /opt/ansible/nucleus/roles/configure_guacamole/tasks/directory-setup.yml for guac
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Ensure containers directory exists] ***
+ok: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Ensure images directory exists] ***
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Ensure dockerfiles directory exists] ***
+ok: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Ensure Guacamole directories exist] ***
+changed: [guac] => (item=)
+changed: [guac] => (item=extensions)
+changed: [guac] => (item=lib)
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Ensure Postgres directory exists] ***
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Ensure Nginx directories exist] ***
+changed: [guac] => (item=)
+changed: [guac] => (item=conf.d)
+changed: [guac] => (item=certs)
+changed: [guac] => (item=cache)
+changed: [guac] => (item=log)
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Create DHI-style nginx temp directories] ***
+changed: [guac] => (item=client_temp)
+changed: [guac] => (item=proxy_temp)
+changed: [guac] => (item=fastcgi_temp)
+changed: [guac] => (item=uwsgi_temp)
+changed: [guac] => (item=scgi_temp)
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Generate DH params file] ***
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Stage compose files] ****
+included: /opt/ansible/nucleus/roles/configure_guacamole/tasks/compose-setup.yml for guac
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Ensure compose directory exists] ***
+ok: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Copy docker-compose.yml] ***
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Create run.sh] **********
+ok: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Create stop.sh] *********
+ok: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Fix permissions and copy postgres/nginx configs] ***
+included: /opt/ansible/nucleus/roles/configure_guacamole/tasks/permissions-and-configs.yml for guac
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Fix Guacamole permissions] ***
+ok: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Fix Postgres permissions] ***
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Copy postgresql.conf] ***
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Copy pg_hba.conf] *******
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Fix Nginx permissions] ***
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Copy nginx.conf] ********
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Ensure ssl-dhparams.pem readable by nginx] ***
+ok: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Copy mime.types] ********
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Copy guacamole.conf] ****
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Copy cert] **************
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Copy certificate key] ***
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Stage, verify, and load nucleus images] ***
+included: /opt/ansible/nucleus/roles/configure_guacamole/tasks/nucleus-images.yml for guac
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Find nucleus images in avocado files] ***
+ok: [guac -> localhost]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Copy nucleus images to target host] ***
+changed: [guac] => (item=/opt/ansible/molecule/scratch/guacamole/artifact/images/nucleus-guacd-1.6.0.tar.gz)
+changed: [guac] => (item=/opt/ansible/molecule/scratch/guacamole/artifact/images/nucleus-guacamole-1.6.0.tar.gz)
+changed: [guac] => (item=/opt/ansible/molecule/scratch/guacamole/artifact/images/nucleus-postgres-18.6.tar.gz)
+changed: [guac] => (item=/opt/ansible/molecule/scratch/guacamole/artifact/images/nucleus-nginx-1.31.8.tar.gz)
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Ensure gpgkeys directory exists] ***
+ok: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Copy GPG public key] ****
+ok: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Import GPG public key] ***
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Find nucleus signature files] ***
+ok: [guac -> localhost]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Copy nucleus signature files to target host] ***
+changed: [guac] => (item=/opt/ansible/molecule/scratch/guacamole/artifact/provenance/nucleus/nucleus-guacamole-1.6.0.tar.gz.asc)
+changed: [guac] => (item=/opt/ansible/molecule/scratch/guacamole/artifact/provenance/nucleus/nucleus-guacd-1.6.0.tar.gz.asc)
+changed: [guac] => (item=/opt/ansible/molecule/scratch/guacamole/artifact/provenance/nucleus/nucleus-nginx-1.31.8.tar.gz.asc)
+changed: [guac] => (item=/opt/ansible/molecule/scratch/guacamole/artifact/provenance/nucleus/nucleus-postgres-18.6.tar.gz.asc)
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Verify GPG signatures for all nucleus images] ***
+changed: [guac] => (item=/opt/ansible/molecule/scratch/guacamole/artifact/images/nucleus-guacd-1.6.0.tar.gz)
+changed: [guac] => (item=/opt/ansible/molecule/scratch/guacamole/artifact/images/nucleus-guacamole-1.6.0.tar.gz)
+changed: [guac] => (item=/opt/ansible/molecule/scratch/guacamole/artifact/images/nucleus-postgres-18.6.tar.gz)
+changed: [guac] => (item=/opt/ansible/molecule/scratch/guacamole/artifact/images/nucleus-nginx-1.31.8.tar.gz)
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Fail if any image signature verification failed] ***
+skipping: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Find hardened nucleus images] ***
+ok: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Fail if no nucleus images found] ***
+skipping: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Load ALL verified nucleus images] ***
+changed: [guac] => (item=/var/lib/containers/images/nucleus-guacd-1.6.0.tar.gz)
+changed: [guac] => (item=/var/lib/containers/images/nucleus-guacamole-1.6.0.tar.gz)
+changed: [guac] => (item=/var/lib/containers/images/nucleus-postgres-18.6.tar.gz)
+changed: [guac] => (item=/var/lib/containers/images/nucleus-nginx-1.31.8.tar.gz)
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Stage Guacamole application files] ***
+included: /opt/ansible/nucleus/roles/configure_guacamole/tasks/guacamole-app-files.yml for guac
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Ensure Guacamole directories exist] ***
+changed: [guac] => (item=extensions)
+changed: [guac] => (item=lib)
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Copy Guacamole JDBC extension] ***
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Copy PostgreSQL JDBC driver] ***
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Copy guacamole.properties] ***
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Set ownership for Guacamole directory] ***
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Ensure fonts directory exists for guacd] ***
+ok: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Copy DejaVuSansMono.ttf for guacd] ***
+ok: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Configure firewall] *****
+[WARNING]: Collection ansible.posix does not support Ansible version 2.15.13
+included: /opt/ansible/nucleus/roles/configure_guacamole/tasks/firewall.yml for guac
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Ensure firewalld Python bindings are installed] ***
+ok: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Ensure firewalld is installed] ***
+ok: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Ensure firewalld is running] ***
+ok: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Allow HTTP/HTTPS] *******
+ok: [guac] => (item=http)
+ok: [guac] => (item=https)
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Add Guacamole-related ports] ***
+ok: [guac] => (item=4822/tcp)
+ok: [guac] => (item=5432/tcp)
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Bootstrap Postgres and import Guacamole database dump] ***
+included: /opt/ansible/nucleus/roles/configure_guacamole/tasks/db-import.yml for guac
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Stop existing stack] ****
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Start Postgres service only] ***
+fatal: [guac]: FAILED! => {"changed": true, "cmd": "docker compose -f /var/lib/containers/compose/docker-compose.yml up -d postgres\n", "delta": "0:00:15.119555", "end": "2026-11-03 12:51:04.486634", "msg": "non-zero return code", "rc": 1, "start": "2026-11-03 12:50:49.367079", "stderr": " Image nucleus/postgres:18.6 Pulling \n Image nucleus/postgres:18.6 Error Get \"https://registry-1.docker.io/v2/\": context deadline exceeded (Client.Timeout exceeded while awaiting headers)\nError response from daemon: Get \"https://registry-1.docker.io/v2/\": context deadline exceeded (Client.Timeout exceeded while awaiting headers)", "stderr_lines": [" Image nucleus/postgres:18.6 Pulling ", " Image nucleus/postgres:18.6 Error Get \"https://registry-1.docker.io/v2/\": context deadline exceeded (Client.Timeout exceeded while awaiting headers)", "Error response from daemon: Get \"https://registry-1.docker.io/v2/\": context deadline exceeded (Client.Timeout exceeded while awaiting headers)"], "stdout": "", "stdout_lines": []}
+
+PLAY RECAP *********************************************************************
+guac                       : ok=65   changed=33   unreachable=0    failed=1    skipped=3    rescued=0    ignored=0
+
+CRITICAL Ansible return code was 2, command was: ansible-playbook --extra-vars 'avocado_artifact_dir=/opt/ansible/molecule/scratch/guacamole/artifact guac_image_class=nucleus' --inventory /opt/ansible/molecule/cache/molecule/configure_guacamole/guac16/inventory --skip-tags molecule-notest,notest /opt/ansible/nucleus/roles/configure_guacamole/molecule/guac16/converge.yml
+log: /opt/ansible/molecule/logs/guac16-nucleus-deploy-2026-11-03-1259.log (exit 2)

@@ -1,0 +1,23 @@
+---
+
+# Canonical build root
+build_root: "/opt/ansible/build"
+
+# Delivery path
+guac_files: "/opt/ansible/files/avocado"
+
+# Database settings
+guac_db_name: "guacamole_db"
+guac_db_user: "guacuser"
+guac_db_pass: "guacpass"
+guac_db_host: "postgress"
+
+# Ports
+guacamole_port: "8080"
+nginx_port: "443"
+postgres_port: "5432"
+
+# Component versions (lowercase)
+jdk_version: "21.0.11.10"
+tomcat_version: "9.0.118"
+guac_version: "1.6.0"

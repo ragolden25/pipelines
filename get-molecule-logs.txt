@@ -87,4 +87,8 @@ signed nucleus-nginx-1.31.8.tar.gz
 chown -R ansible:ansible-admin /opt/ansible/molecule/cache /opt/ansible/molecule/logs /opt/ansible/molecule/scratch
 sed -i '0,/^set -u$/s//set -u\n[ "$(id -un)" = ansible ] || { echo "run play_weekly_molecule.sh as ansible, not $(id -un)"; exit 1; }/' /opt/ansible/nucleus/playbooks/play_weekly_molecule.sh
 grep -n 'run play_weekly_molecule.sh as ansible' /opt/ansible/nucleus/playbooks/play_weekly_molecule.sh
+
+
+
+cd /opt/ansible/molecule/logs && for p in 'guac16-ccop-deploy' 'guac16-nucleus-deploy'; do f=$(ls -t ${p}*.log 2>/dev/null | head -1); echo "===== $f"; grep -n -B3 -A12 -m1 -E 'fatal:|FAILED!|ERROR!|CRITICAL' "$f" | cut -c1-400; done
 signed nucleus-prometheus-3.15.1.tar.gz

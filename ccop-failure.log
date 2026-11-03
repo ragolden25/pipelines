@@ -1,0 +1,151 @@
+It looks like the ccop test failed!
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Ensure firewalld is installed] ***
+ok: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Ensure firewalld is running] ***
+ok: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Allow HTTP/HTTPS] *******
+ok: [guac] => (item=http)
+ok: [guac] => (item=https)
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Add Guacamole-related ports] ***
+ok: [guac] => (item=4822/tcp)
+ok: [guac] => (item=5432/tcp)
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Bootstrap Postgres and import Guacamole database d                              ump] ***
+included: /opt/ansible/nucleus/roles/configure_guacamole/tasks/db-import.yml for guac
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Stop existing stack] ****
+changed: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Start Postgres service only] ***
+fatal: [guac]: FAILED! => {"changed": true, "cmd": "docker compose -f /var/lib/containers/compose/docker-                              compose.yml up -d postgres\n", "delta": "0:00:15.103511", "end": "2026-11-03 12:45:07.755959", "msg": "no                              n-zero return code", "rc": 1, "start": "2026-11-03 12:44:52.652448", "stderr": " Image ccop/postgres:18.6                               Pulling \n Image ccop/postgres:18.6 Error Get \"https://registry-1.docker.io/v2/\": context deadline exc                              eeded (Client.Timeout exceeded while awaiting headers)\nError response from daemon: Get \"https://registr                              y-1.docker.io/v2/\": context deadline exceeded (Client.Timeout exceeded while awaiting headers)", "stderr                              _lines": [" Image ccop/postgres:18.6 Pulling ", " Image ccop/postgres:18.6 Error Get \"https://registry-1                              .docker.io/v2/\": context deadline exceeded (Client.Timeout exceeded while awaiting headers)", "Error res                              ponse from daemon: Get \"https://registry-1.docker.io/v2/\": context deadline exceeded (Client.Timeout ex                              ceeded while awaiting headers)"], "stdout": "", "stdout_lines": []}
+
+PLAY RECAP *********************************************************************
+guac                       : ok=65   changed=33   unreachable=0    failed=1    skipped=3    rescued=0                                  ignored=0
+
+CRITICAL Ansible return code was 2, command was: ansible-playbook --extra-vars 'avocado_artifact_dir=/opt                              /ansible/molecule/scratch/guacamole/artifact guac_image_class=ccop' --inventory /opt/ansible/molecule/cac                              he/molecule/configure_guacamole/guac16/inventory --skip-tags molecule-notest,notest /opt/ansible/nucleus/                              roles/configure_guacamole/molecule/guac16/converge.yml
+log: /opt/ansible/molecule/logs/guac16-ccop-deploy-2026-11-03-1252.log (exit 2)
+INFO     guac16 scenario test matrix: dependency, create, prepare, converge
+INFO     Running guac16 > dependency
+WARNING  Skipping, missing the requirements file.
+WARNING  Skipping, missing the requirements file.
+INFO     Running guac16 > create
+WARNING  Skipping, create action has no playbook.
+INFO     Running guac16 > prepare
+
+PLAY [Prepare the weekly test artifact folder] *********************************
+
+TASK [Newest weekly images folder that has this class] *************************
+ok: [localhost]
+
+TASK [A weekly images folder must exist] ***************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "All assertions passed"
+}
+
+TASK [Start from an empty test folder] *****************************************
+ok: [localhost]
+
+TASK [Test folder structure] ***************************************************
+changed: [localhost] => (item=/opt/ansible/molecule/scratch/guacamole/artifact)
+changed: [localhost] => (item=/opt/ansible/molecule/scratch/guacamole/artifact/images)
+changed: [localhost] => (item=/opt/ansible/molecule/scratch/guacamole/artifact/provenance/nucleus)
+
+TASK [Copy everything from current except its images and provenance] ***********
+changed: [localhost]
+
+TASK [Copy this week's images into the test folder and read their real name:tag] ***
+changed: [localhost]
+
+TASK [Find the build role's signatures for this week's images] *****************
+ok: [localhost]
+
+TASK [Every image must have a build signature] *********************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "All assertions passed"
+}
+
+TASK [Copy the build signatures into the test folder] **************************
+changed: [localhost] => (item=nucleus-guacamole-1.6.0.tar.gz.asc)
+changed: [localhost] => (item=nucleus-guacd-1.6.0.tar.gz.asc)
+changed: [localhost] => (item=nucleus-nginx-1.31.8.tar.gz.asc)
+changed: [localhost] => (item=nucleus-postgres-18.6.tar.gz.asc)
+
+TASK [This week's compose file for the class under test (produced by the weekly build)] ***
+ok: [localhost]
+
+TASK [The weekly build must have produced it] **********************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "All assertions passed"
+}
+
+TASK [Use the week's compose file and .env] ************************************
+changed: [localhost] => (item=docker-compose.yml)
+changed: [localhost] => (item=.env)
+
+TASK [Image lines this run deploys] ********************************************
+ok: [localhost]
+
+TASK [Point versions.env at the weekly image versions] *************************
+changed: [localhost]
+
+TASK [What this run deploys] ***************************************************
+ok: [localhost] => {
+    "msg": [
+        "weekly images: /opt/ansible/files/avocado/weekly/45/images",
+        [
+            "    image: nucleus/guacd:1.6.0",
+            "    image: nucleus/postgres:18.6",
+            "    image: nucleus/guacamole:1.6.0",
+            "    image: nucleus/nginx:1.31.8"
+        ],
+        [
+            "GUACAMOLE_VERSION=\"1.6.0\"",
+            "GUACD_VERSION=\"1.6.0\"",
+            "NGINX_VERSION=\"1.31.8\"",
+            "POSTGRES_VERSION=\"18.6\"",
+            "TOMCAT_VERSION=9.0.118",
+            "JDK_VERSION=21.0.11.10"
+        ]
+    ]
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=15   changed=6    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+
+INFO     Running guac16 > converge
+
+PLAY [Converge] ****************************************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [guac]
+
+TASK [Deploy the Guacamole stack] **********************************************
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Execute environmental bootstrap and file staging] ***
+included: /opt/ansible/nucleus/roles/configure_guacamole/tasks/stage-environment.yml for guac
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Resolve the 'current' quarter symlink] ***
+included: /opt/ansible/nucleus/roles/configure_guacamole/tasks/symlink-current.yml for guac
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Find quarter directories present on this control node] ***
+ok: [guac -> localhost]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Fail if no quarter directories found] ***
+skipping: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Point 'current' symlink at the latest quarter directory present] ***
+ok: [guac -> localhost]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Full Docker teardown (dev_clean)] ***
+included: /opt/ansible/nucleus/roles/configure_guacamole/tasks/dev-cleanup.yml for guac
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Stop all containers] ****
+changed: [guac]
+

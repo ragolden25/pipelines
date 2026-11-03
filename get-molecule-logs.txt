@@ -1,1 +1,35 @@
 cd /opt/ansible/molecule/logs && for p in 'grafana12-2' 'guac16-ccop-deploy' 'guac16-nucleus-deploy'; do f=$(ls -t ${p}*.log 2>/dev/null | head -1); echo "===== $f"; grep -n -B3 -A12 -m1 -E 'fatal:|FAILED!|ERROR!|CRITICAL' "$f" | cut -c1-400; done
+
+
+[root@ansible-forge tasks]# cd /opt/ansible/molecule/logs && for p in 'grafana12-2' 'guac16-ccop-deploy' 'guac16-nucleus-deploy'; do f=$(ls -t ${p}*.log 2>/dev/null | head -1); echo "===== $f"; grep -n -B3 -A12 -m1 -E 'fatal:|FAILED!|ERROR!|CRITICAL' "$f" | cut -c1-400; done
+===== grafana12-2026-11-03-0949.log
+===== guac16-ccop-deploy-2026-11-03-0956.log
+35-ok: [localhost]
+36-
+37-TASK [Every linked image must have a build signature] **************************
+38:fatal: [localhost]: FAILED! => {
+39-    "assertion": "(linked.stdout_lines | map('split', ' ') | map('first') | list) | reject('in', sigs.files | map(attribute='path') | map('basename')\n           | map('regex_replace', '^' ~ cls ~ '-([a-z0-9]+)-.*$', '\\\\1') | list)\n| list | length == 0",
+40-    "changed": false,
+41-    "evaluated_to": false,
+42-    "msg": "Not every weekly ccop image has a build signature (.asc) under /opt/ansible/files/avocado/weekly/45. found=[]"
+43-}
+44-
+45-PLAY RECAP *********************************************************************
+46-localhost                  : ok=7    changed=3    unreachable=0    failed=1    skipped=0    rescued=0    ignored=0
+47-
+48-CRITICAL Ansible return code was 2, command was: ansible-playbook --extra-vars 'avocado_artifact_dir=/opt/ansible/molecule/scratch/guacamole/artifact guac_image_class=ccop' --inventory /opt/ansible/molecule/cache/molecule/configure_guacamole/guac16/inventory --skip-tags molecule-notest,notest /opt/ansible/nucleus/roles/configure_guacamole/molecule/guac16/prepare.yml
+===== guac16-nucleus-deploy-2026-11-03-0956.log
+35-ok: [localhost]
+36-
+37-TASK [Every linked image must have a build signature] **************************
+38:fatal: [localhost]: FAILED! => {
+39-    "assertion": "(linked.stdout_lines | map('split', ' ') | map('first') | list) | reject('in', sigs.files | map(attribute='path') | map('basename')\n           | map('regex_replace', '^' ~ cls ~ '-([a-z0-9]+)-.*$', '\\\\1') | list)\n| list | length == 0",
+40-    "changed": false,
+41-    "evaluated_to": false,
+42-    "msg": "Not every weekly nucleus image has a build signature (.asc) under /opt/ansible/files/avocado/weekly/45. found=[]"
+43-}
+44-
+45-PLAY RECAP *********************************************************************
+46-localhost                  : ok=7    changed=3    unreachable=0    failed=1    skipped=0    rescued=0    ignored=0
+47-
+48-CRITICAL Ansible return code was 2, command was: ansible-playbook --extra-vars 'avocado_artifact_dir=/opt/ansible/molecule/scratch/guacamole/artifact guac_image_class=nucleus' --inventory /opt/ansible/molecule/cache/molecule/configure_guacamole/guac16/inventory --skip-tags molecule-notest,notest /opt/ansible/nucleus/roles/configure_guacamole/molecule/guac16/prepare.yml

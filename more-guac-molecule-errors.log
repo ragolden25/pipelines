@@ -553,3 +553,20 @@ grep -n 'weekly_ns:' /opt/ansible/nucleus/roles/weekly_common/tasks/context.yml
 [ansible@ansible-forge ~]$ sed -i 's|weekly_ns: "weekly/{{ weekly_component.stack }}/"|weekly_ns: ""|' /opt/ansible/nucleus/roles/weekly_common/tasks/context.yml
 grep -n 'weekly_ns:' /opt/ansible/nucleus/roles/weekly_common/tasks/context.yml
 22:    weekly_ns: ""
+
+
+
+
+The naming change is in place. Next, rebuild so week 45 gets correctly named images (as ansible):
+
+/opt/ansible/nucleus/playbooks/play_weekly_builds.sh
+
+When it finishes, roughly 40 minutes, check the compose files it produced, then run the Guacamole tests:
+
+grep -h 'image:' /opt/ansible/files/avocado/weekly/45/docker-compose*.yml
+/opt/ansible/molecule/run-guac16.sh deploy ccop && /opt/ansible/molecule/run-guac16.sh verify ccop; /opt/ansible/molecule/run-guac16.sh deploy && /opt/ansible/molecule/run-guac16.sh verify
+
+The grep should show plain nucleus/... lines in one file and ccop/... lines in the other, which now match the names inside the image files.
+
+
+

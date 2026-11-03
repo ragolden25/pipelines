@@ -68,12 +68,10 @@ COPY --chown=postgres:postgres staged/share   ${PG_PREFIX}/share
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod 0755 /usr/local/bin/docker-entrypoint.sh
 
-# Initialize PGDATA
-RUN set -eux; \
-    mkdir -p "${PGDATA}"; \
-    chown postgres:postgres "${PGDATA}"; \
-    chmod 0700 "${PGDATA}"; \
-    gosu postgres "${PG_PREFIX}/bin/initdb" -D "${PGDATA}"
+# NOTE: no build-time initdb (same as the hardened image). An empty named volume
+# gets the image's content copied into it on first mount, so a baked cluster
+# would make the entrypoint SKIP init: no POSTGRES_USER/PASSWORD, no POSTGRES_DB,
+# no initdb.d scripts. PGDATA is left empty; the entrypoint initializes it.
 
 RUN mkdir -p /docker-entrypoint-initdb.d \
     && chmod 0755 /docker-entrypoint-initdb.d \

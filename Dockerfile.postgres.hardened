@@ -1,0 +1,180 @@
+# Dockerfile.postgres.hardened
+# ------------------------------------------------------------
+# Hardened PostgreSQL runtime image (nucleus/postgres:<version>)
+# Grafana-pattern: slim baseline -> staged artifacts -> rootfs -> strip -> scratch
+#
+# Uses the STOCK, unmodified docker-library/postgres docker-entrypoint.sh
+# to initialize an empty PGDATA at container start. Requires bash + a
+# minimal coreutils/findutils/gawk set in the final image -- same
+# trade-off already accepted for the Guacamole/Tomcat image.
+#
+# gosu and libnss-wrapper are deliberately NOT installed: this image
+# always runs as the real `postgres` UID 70, so neither code path in
+# the entrypoint is reachable.
+#
+# VERSIONING:
+# POSTGRES_VERSION -- passed by build_postgres_hardened.sh (e.g. 18.6)
+# POSTGRES_MAJOR -- defaults to 18 below (single place to change).
+# Can still be overridden with --build-arg.
+# The guard in the builder fails the build if they disagree, so a
+# 19.x bump with a stale major can never produce a wrong PGDATA path.
+# ------------------------------------------------------------
+
+# Global defaults -- the ONE place to change on a major bump
+ARG POSTGRES_MAJOR=18
+ARG POSTGRES_VERSION
+
+FROM container-forge/debian13-slim:latest AS builder
+
+# Re-declare to pull global values into this stage
+ARG POSTGRES_VERSION
+ARG POSTGRES_MAJOR
+
+# Fail fast instead of silently baking "//" into paths
+RUN set -eux; \
+    test -n "${POSTGRES_VERSION:-}" || { echo "POSTGRES_VERSION build-arg not set" >&2; exit 1; }; \
+    test -n "${POSTGRES_MAJOR:-}" || { echo "POSTGRES_MAJOR not set" >&2; exit 1; }; \
+    case "${POSTGRES_VERSION}" in \
+      "${POSTGRES_MAJOR}".*) ;; \
+      *) echo "POSTGRES_VERSION ${POSTGRES_VERSION} does not match POSTGRES_MAJOR ${POSTGRES_MAJOR} -- update the ARG default at top of Dockerfile" >&2; exit 1;; \
+    esac
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# PG_PREFIX on full version (matches stage_postgres_source.sh layout).
+# PGDATA on major only (matches compose: guac-db-data:/var/lib/postgresql/18/data).
+ENV PG_PREFIX="/opt/postgresql/${POSTGRES_VERSION}" \
+    PGDATA="/var/lib/postgresql/${POSTGRES_MAJOR}/data"
+
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+      ca-certificates \
+      bash \
+      coreutils \
+      findutils \
+      gawk \
+      libcurl4t64 \
+      libgssapi-krb5-2 \
+      libicu76 \
+      libldap2 \
+      liblz4-1 \
+      libnuma1 \
+      libpam0g \
+      libreadline8t64 \
+      libselinux1 \
+      libssl3t64 \
+      liburing2 \
+      libuuid1 \
+      libxml2 \
+      libxslt1.1 \
+      libzstd1 \
+      locales \
+      tzdata; \
+    rm -rf /var/lib/apt/lists/*
+
+RUN set -eux; \
+    echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen; \
+    locale-gen en_US.UTF-8
+
+ENV LANG=en_US.UTF-8 \
+    LANGUAGE=en_US:en \
+    LC_ALL=en_US.UTF-8 \
+    PATH=${PG_PREFIX}/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# postgres user/group and PGDATA directory (left EMPTY on purpose)
+RUN set -eux; \
+    groupadd -g 70 postgres || true; \
+    useradd -u 70 -g 70 -d /var/lib/postgresql -s /usr/sbin/nologin postgres || true; \
+    mkdir -p "${PGDATA}"; \
+    chown -R postgres:postgres /var/lib/postgresql; \
+    chmod 0700 "${PGDATA}"
+
+RUN apt-get purge --allow-remove-essential -y \
+        util-linux \
+        passwd \
+        gzip \
+        xz-utils; \
+    apt-get autoremove -y; \
+    rm -rf /var/lib/apt/lists/*
+
+# Flat staged/ layout; per-subdir copy keeps inventory.env out
+COPY --chown=postgres:postgres staged/bin ${PG_PREFIX}/bin
+COPY --chown=postgres:postgres staged/include ${PG_PREFIX}/include
+COPY --chown=postgres:postgres staged/lib ${PG_PREFIX}/lib
+COPY --chown=postgres:postgres staged/share ${PG_PREFIX}/share
+
+# NOTE: no build-time initdb. An empty named volume gets the image's
+# content copied into it on first mount, so a baked cluster would make
+# the entrypoint SKIP init (no password, no POSTGRES_DB, no initdb.d
+# scripts, trust auth). The stock entrypoint initializes it instead.
+
+# /var/run is a symlink to /run on Debian
+RUN set -eux; \
+    mkdir -p /run/postgresql; \
+    chown -R postgres:postgres /run/postgresql; \
+    chmod 2775 /run/postgresql; \
+    mkdir -p /docker-entrypoint-initdb.d; \
+    chmod 0755 /docker-entrypoint-initdb.d; \
+    chown -R postgres:postgres /docker-entrypoint-initdb.d
+
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod 0755 /usr/local/bin/docker-entrypoint.sh
+
+# Build rootfs BEFORE stripping (Grafana pattern).
+# /bin /sbin /lib /lib64 are merged-usr symlinks; cp -a keeps them as symlinks.
+RUN set -eux; \
+    mkdir -p /rootfs/run /rootfs/tmp; \
+    chmod 1777 /rootfs/tmp; \
+    cp -a /bin /sbin /lib /lib64 /usr /etc /var /opt /rootfs/; \
+    cp -a /run/postgresql /rootfs/run/; \
+    cp -a /docker-entrypoint-initdb.d /rootfs/
+
+RUN rm -rf \
+    /rootfs/var/lib/apt \
+    /rootfs/var/cache/apt \
+    /rootfs/var/lib/dpkg \
+    /rootfs/usr/share/doc \
+    /rootfs/usr/share/man \
+    /rootfs/usr/bin/apt* \
+    /rootfs/usr/bin/dpkg*
+
+# Regression guard: fail the build if rootfs is incomplete
+RUN set -eux; \
+    for b in postgres initdb pg_ctl psql; do test -x "/rootfs${PG_PREFIX}/bin/$b"; done; \
+    for b in bash id ls find chmod mkdir cat; do test -x "/rootfs/usr/bin/$b"; done; \
+    test -d "/rootfs${PGDATA}"; \
+    test -z "$(ls -A "/rootfs${PGDATA}")"; \
+    test -d /rootfs/run/postgresql; \
+    test -x /rootfs/usr/local/bin/docker-entrypoint.sh; \
+    chroot /rootfs "${PG_PREFIX}/bin/postgres" --version
+
+FROM scratch
+
+# Re-declare to pull global values into this stage
+ARG POSTGRES_VERSION
+ARG POSTGRES_MAJOR
+
+LABEL org.opencontainers.image.title="postgres-hardened" \
+      org.opencontainers.image.version="${POSTGRES_VERSION}" \
+      org.opencontainers.image.description="Hardened PostgreSQL runtime image on custom distroless" \
+      org.opencontainers.image.licenses="PostgreSQL"
+
+COPY --from=builder /rootfs/ /
+
+# scratch inherits NOTHING from the builder -- re-declare all runtime ENV
+ENV PG_PREFIX="/opt/postgresql/${POSTGRES_VERSION}" \
+    PGDATA="/var/lib/postgresql/${POSTGRES_MAJOR}/data" \
+    LANG=en_US.UTF-8 \
+    LANGUAGE=en_US:en \
+    LC_ALL=en_US.UTF-8
+ENV PATH=${PG_PREFIX}/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+USER 70:70
+WORKDIR ${PGDATA}
+
+STOPSIGNAL SIGINT
+EXPOSE 5432
+
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+CMD ["postgres"]

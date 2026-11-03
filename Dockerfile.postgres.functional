@@ -1,0 +1,87 @@
+# ------------------------------------------------------------
+# Functional PostgreSQL runtime image (ccop/postgres:<version>)
+# ------------------------------------------------------------
+
+FROM container-forge/debian13-slim:latest
+
+ARG POSTGRES_VERSION
+ARG POSTGRES_MAJOR
+ENV DEBIAN_FRONTEND=noninteractive
+
+ENV PG_PREFIX="/opt/postgresql/${POSTGRES_VERSION}" \
+    PGDATA="/var/lib/postgresql/${POSTGRES_MAJOR}/data"
+
+# Runtime dependencies (minimal, no build deps)
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+      ca-certificates \
+      libcurl4t64 \
+      libgssapi-krb5-2 \
+      libicu76 \
+      libldap2 \
+      liblz4-1 \
+      libnuma1 \
+      libpam0g \
+      libreadline8t64 \
+      libselinux1 \
+      libssl3t64 \
+      liburing2 \
+      libuuid1 \
+      libxml2 \
+      libxslt1.1 \
+      libzstd1 \
+      locales \
+      tzdata \
+      gosu; \
+    rm -rf /var/lib/apt/lists/*
+
+# Locales
+RUN set -eux; \
+    echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen; \
+    locale-gen en_US.UTF-8
+
+ENV LANG=en_US.UTF-8 \
+    LANGUAGE=en_US:en \
+    LC_ALL=en_US.UTF-8 \
+    PATH=${PG_PREFIX}/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# Create postgres user/group and PGDATA directory
+RUN set -eux; \
+    groupadd -g 70 postgres || true; \
+    useradd -u 70 -g 70 -d /var/lib/postgresql -s /bin/bash postgres || true; \
+    mkdir -p "${PGDATA}"; \
+    chown -R postgres:postgres /var/lib/postgresql; \
+    chmod 0700 "${PGDATA}"
+
+# Copy staged PostgreSQL runtime (from build quarter staged/, populated by
+# sync-latest-version.sh). staged/ is flat: bin/, include/, lib/, share/,
+# inventory.env sit directly inside it -- no opt/postgresql/<version>
+# nesting. Copied per-subdirectory so inventory.env (pipeline metadata)
+# never ends up in the image.
+COPY --chown=postgres:postgres staged/bin     ${PG_PREFIX}/bin
+COPY --chown=postgres:postgres staged/include ${PG_PREFIX}/include
+COPY --chown=postgres:postgres staged/lib     ${PG_PREFIX}/lib
+COPY --chown=postgres:postgres staged/share   ${PG_PREFIX}/share
+
+# Copy entrypoint (same as before)
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod 0755 /usr/local/bin/docker-entrypoint.sh
+
+# Initialize PGDATA
+RUN set -eux; \
+    mkdir -p "${PGDATA}"; \
+    chown postgres:postgres "${PGDATA}"; \
+    chmod 0700 "${PGDATA}"; \
+    gosu postgres "${PG_PREFIX}/bin/initdb" -D "${PGDATA}"
+
+RUN mkdir -p /docker-entrypoint-initdb.d \
+    && chmod 0755 /docker-entrypoint-initdb.d \
+    && chown -R postgres:postgres /docker-entrypoint-initdb.d
+
+EXPOSE 5432
+
+USER postgres
+
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+CMD ["postgres"]

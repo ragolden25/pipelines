@@ -1,0 +1,52 @@
+# defaults file for build_guac_release
+
+# Base component versions
+tomcat_version: 9.0.118
+jdk_version: 21.0.11.10
+guacd_version: ""
+guacamole_version: ""
+postgres_version: ""
+nginx_version: ""
+
+# Namespaces
+nucleus: "nucleus"
+ccop: "ccop"
+
+# Build mode
+guac_build_mode: "both"
+
+dockerfile_root: "/opt/ansible/files/avocado/{{ quarter }}/dockerfiles"
+
+
+# ================================
+# Provenance Root
+# ================================
+guac_provenance_root: "/opt/ansible/files/avocado/{{ quarter }}/provenance"
+
+
+base_image: "container-forge/debian13-slim:latest"
+base_image_ref: "{{ base_image }}"
+
+# CCOP (functional) images
+ccop_guacd_image: "ccop/guacd:{{ guacd_version }}"
+ccop_guacamole_image: "ccop/guacamole:{{ guacamole_version }}"
+ccop_postgres_image: "ccop/postgres:{{ postgres_version }}"
+ccop_nginx_image: "ccop/nginx:{{ nginx_version }}"
+
+# Nucleus (hardened) images
+nucleus_guacd_image: "nucleus/guacd:{{ guacd_version }}"
+nucleus_guacamole_image: "nucleus/guacamole:{{ guacamole_version }}"
+nucleus_postgres_image: "nucleus/postgres:{{ postgres_version }}"
+nucleus_nginx_image: "nucleus/nginx:{{ nginx_version }}"
+
+# Both CCOP-DEV and Nucleus-PROD images
+all_images:
+  - "{{ base_image_ref }}"
+  - "{{ ccop_guacd_image }}"
+  - "{{ ccop_guacamole_image }}"
+  - "{{ ccop_postgres_image }}"
+  - "{{ ccop_nginx_image }}"
+  - "{{ nucleus_guacd_image }}"
+  - "{{ nucleus_guacamole_image }}"
+  - "{{ nucleus_postgres_image }}"
+  - "{{ nucleus_nginx_image }}"

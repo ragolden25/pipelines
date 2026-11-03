@@ -119,4 +119,9 @@ cd /opt/ansible/molecule/logs && for p in 'guac16-ccop-deploy' 'guac16-nucleus-d
 sed -i 's|ln -sf "$f" "{{ art }}/images/|cp -p "$f" "{{ art }}/images/|' /opt/ansible/nucleus/roles/configure_guacamole/molecule/guac16/prepare.yml
 grep -n 'cp -p' /opt/ansible/nucleus/roles/configure_guacamole/molecule/guac16/prepare.yml
 
+[root@ansible-forge logs]# sed -i 's|ln -sf "$f" "{{ art }}/images/|cp -p "$f" "{{ art }}/images/|' /opt/ansible/nucleus/roles/configure_guacamole/molecule/guac16/prepare.yml
+grep -n 'cp -p' /opt/ansible/nucleus/roles/configure_guacamole/molecule/guac16/prepare.yml
+66:          cp -p "$f" "{{ art }}/images/$(basename "$f")"
+
+
 /opt/ansible/molecule/run-guac16.sh deploy ccop && /opt/ansible/molecule/run-guac16.sh verify ccop; /opt/ansible/molecule/run-guac16.sh deploy && /opt/ansible/molecule/run-guac16.sh verify

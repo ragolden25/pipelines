@@ -1,0 +1,12 @@
+It shows that the deployment and nucleus images work. The ccop still fails.
+Why would it fail the ccop deployment and not the nucleus hardened deployment.
+This is NOT making sense.
+
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Import Guacamole DB] ****
+^[[31mfatal: [guac]: FAILED! => {"changed": true, "cmd": ["/var/lib/containers/scripts/import_guac_db.sh"], "delta": "0:00:00.141721", "end": "2026-11-03 14:30:10.912157", "msg": "non-zero return code", "rc": 2, "start": "2026-11-03 14:30:10.770436", "stderr": "psql: error: connection to server on socket \"/tmp/.s.PGSQL.5432\" failed: FATAL:  password authentication failed for user \"guacuser\"", "stderr_lines": ["psql: error: connection to server on socket \"/tmp/.s.PGSQL.5432\" failed: FATAL:  password authentication failed for user \"guacuser\""], "stdout": "=== Guacamole DB Dump Verification ===\n[OK] Dump file exists\n[OK] Dump file is not empty\n[OK] Found table: guacamole_connection\n[OK] Found table: guacamole_connection_parameter\n[OK] Found table: guacamole_user\n[OK] Found table: guacamole_user_permission\n[OK] Found table: guacamole_connection_permission\n[OK] Connection rows detected\n[OK] SQL terminator found\n=== Verification Complete: Dump is valid ===", "stdout_lines": ["=== Guacamole DB Dump Verification ===", "[OK] Dump file exists", "[OK] Dump file is not empty", "[OK] Found table: guacamole_connection", "[OK] Found table: guacamole_connection_parameter", "[OK] Found table: guacamole_user", "[OK] Found table: guacamole_user_permission", "[OK] Found table: guacamole_connection_permission", "[OK] Connection rows detected", "[OK] SQL terminator found", "=== Verification Complete: Dump is valid ==="]}^[[0m
+
+PLAY RECAP *********************************************************************
+^[[31mguac^[[0m                       : ^[[32mok=72  ^[[0m ^[[33mchanged=35  ^[[0m unreachable=0    ^[[31mfailed=1   ^[[0m ^[[36mskipped=3   ^[[0m rescued=0    ignored=0
+
+^[[1;31mCRITICAL^[[0m Ansible return code was 2, command was: ^[[2mansible-playbook --extra-vars 'avocado_artifact_dir=/opt/ansible/molecule/scratch/guacamole/artifact guac_image_class=ccop' --inventory /opt/ansible/molecule/cache/molecule/configure_guacamole/guac16/inventory --skip-tags molecule-notest,notest /opt/ansible/nucleus/roles/configure_guacamole/molecule/guac16/converge.yml^[[0m

@@ -1,0 +1,155 @@
+services:
+
+  guacd:
+    image: nucleus/guacd:{{ GUACD_VERSION }}
+    container_name: guacd
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:4822:4822"
+    volumes:
+      - /var/lib/containers/fonts:/usr/share/fonts/truetype/custom:Z
+      - /var/lib/containers/guacamole:/etc/guacamole:Z
+    networks:
+      - guacnet
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+      - seccomp=/usr/share/containers/seccomp.json
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256m
+        reservations:
+          cpus: "0.10"
+          memory: 64m
+
+  postgres:
+    image: nucleus/postgres:{{ POSTGRES_VERSION }}
+    container_name: guac-db
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:{{ postgres_port }}:5432"
+    environment:
+      POSTGRES_USER: guacuser
+      POSTGRES_PASSWORD: guacpass
+      POSTGRES_DB: guacamole_db
+    command: >
+      -c config_file=/var/lib/containers/postgres/postgresql.conf
+      -c hba_file=/var/lib/containers/postgres/pg_hba.conf
+    volumes:
+      - guac-db-data:/var/lib/postgresql/18/data
+      - /var/lib/containers/postgres:/var/lib/containers/postgres:ro
+    networks:
+      - guacnet
+    security_opt:
+      - no-new-privileges:true
+      - seccomp=/usr/share/containers/seccomp.json
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 1g
+        reservations:
+          cpus: "0.10"
+          memory: 256m
+
+  guacamole:
+    image: nucleus/guacamole:{{ GUACAMOLE_VERSION }}
+    container_name: guacamole
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:{{ guacamole_port }}:8080"
+    volumes:
+      - /var/lib/containers/guacamole/extensions:/usr/local/tomcat/.guacamole/extensions
+      - /var/lib/containers/guacamole/lib:/usr/local/tomcat/.guacamole/lib
+      - /var/lib/containers/guacamole/guacamole.properties:/usr/local/tomcat/.guacamole/guacamole.properties:ro
+    depends_on:
+      - guacd
+      - postgres
+    environment:
+      GUACD_HOSTNAME: guacd
+      POSTGRESQL_HOSTNAME: postgres
+      POSTGRESQL_DATABASE: {{ guac_db_name }}
+      POSTGRESQL_USERNAME: {{ guac_db_user }}
+      POSTGRESQL_PASSWORD: {{ guac_db_pass }}
+      REMOTE_IP_VALVE_ENABLED: 'true'
+      REMOTE_IP_VALVE_REMOTE_IP_HEADER: X-Forwarded-For
+      REMOTE_IP_VALVE_PROTOCOL_HEADER: X-Forwarded-Proto
+    networks:
+      - guacnet
+    security_opt:
+      - no-new-privileges:true
+      - seccomp=/usr/share/containers/seccomp.json
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1g
+        reservations:
+          cpus: "0.25"
+          memory: 256m
+
+  nginx:
+    image: nucleus/nginx:{{ NGINX_VERSION }}
+    container_name: nginx
+    restart: unless-stopped
+
+    user: "65532:65532"
+
+    ports:
+      - "443:443"
+
+    volumes:
+      - /var/lib/containers/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - /var/lib/containers/nginx/mime.types:/etc/nginx/mime.types
+      - /var/lib/containers/nginx/ssl-dhparams.pem:/etc/nginx/ssl-dhparams.pem
+      - /var/lib/containers/nginx/conf.d:/etc/nginx/conf.d:ro
+      - /var/lib/containers/nginx/certs:/etc/nginx/certs:ro
+
+      # Hardened temp dirs (critical)
+      - /var/lib/containers/nginx/cache:/var/cache/nginx
+      - /var/lib/containers/nginx/log:/var/log/nginx
+
+    depends_on:
+      - guacamole
+
+    networks:
+      - guacnet
+
+    security_opt:
+      - no-new-privileges:true
+      - seccomp=/usr/share/containers/seccomp.json
+
+    cap_drop:
+      - ALL
+
+    cap_add:
+      - NET_BIND_SERVICE
+
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128m
+        reservations:
+          cpus: "0.05"
+          memory: 32m
+
+volumes:
+  guac-db-data:
+
+networks:
+  guacnet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.18.0.0/24

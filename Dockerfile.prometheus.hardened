@@ -1,0 +1,63 @@
+FROM container-forge/debian13-slim:latest AS builder
+
+ARG PROMETHEUS_VERSION
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
+        tzdata \
+        libc6 \
+        libstdc++6 \
+        openssl \
+        libssl3 && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /etc/prometheus /var/prometheus /usr/local/bin
+
+COPY staged/prometheus /usr/local/bin/prometheus
+COPY staged/promtool /usr/local/bin/promtool
+COPY staged/prometheus.yml /etc/prometheus/prometheus.yml
+
+RUN chmod 0755 /usr/local/bin/prometheus /usr/local/bin/promtool && \
+    chown -R 65532:65532 /etc/prometheus /var/prometheus
+
+# Build rootfs BEFORE stripping
+RUN mkdir /rootfs && \
+    cp -a /bin /rootfs/bin && \
+    cp -a /lib /rootfs/lib && \
+    cp -a /lib64 /rootfs/lib64 && \
+    cp -a /usr /rootfs/usr && \
+    cp -a /etc /rootfs/etc && \
+    cp -a /var /rootfs/var
+
+# Strip inside rootfs
+RUN rm -rf /rootfs/var/lib/apt /rootfs/var/cache/apt /rootfs/var/lib/dpkg \
+           /rootfs/usr/share/doc /rootfs/usr/share/man \
+           /rootfs/bin/sh /rootfs/bin/bash /rootfs/bin/dash \
+           /rootfs/usr/bin/apt* /rootfs/usr/bin/dpkg* \
+           /rootfs/usr/bin/lsblk /rootfs/usr/bin/fdisk \
+           /rootfs/usr/bin/mount /rootfs/usr/bin/umount \
+           /rootfs/usr/bin/passwd /rootfs/usr/bin/chage \
+           /rootfs/usr/sbin/useradd /rootfs/usr/sbin/usermod \
+           /rootfs/bin/gzip /rootfs/usr/bin/gzip \
+           /rootfs/bin/xz /rootfs/usr/bin/xz
+
+FROM scratch
+
+ARG PROMETHEUS_VERSION
+
+LABEL org.opencontainers.image.title="prometheus-hardened" \
+      org.opencontainers.image.version="${PROMETHEUS_VERSION}" \
+      org.opencontainers.image.description="Hardened Prometheus 3.x runtime image on custom distroless" \
+      org.opencontainers.image.licenses="Apache-2.0"
+
+COPY --from=builder /rootfs/ /
+
+USER 65532:65532
+WORKDIR /var/prometheus
+
+EXPOSE 9191
+
+ENTRYPOINT ["/usr/local/bin/prometheus"]
+CMD ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.path=/var/prometheus"]

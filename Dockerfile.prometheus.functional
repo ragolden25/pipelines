@@ -1,0 +1,49 @@
+FROM container-forge/debian13-slim:latest
+
+ARG PROMETHEUS_VERSION
+
+LABEL org.opencontainers.image.title="prometheus-functional" \
+      org.opencontainers.image.version="${PROMETHEUS_VERSION}" \
+      org.opencontainers.image.description="Functional Prometheus 3.x image with full tooling" \
+      org.opencontainers.image.licenses="Apache-2.0"
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PROMETHEUS_VERSION=${PROMETHEUS_VERSION} \
+    PATH=/usr/local/bin:/usr/sbin:/sbin:/usr/bin:/bin
+
+# 1. System update & runtime dependency installation
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
+        bash \
+        coreutils \
+        libc6 \
+        libstdc++6 \
+        tzdata && \
+    rm -rf /var/lib/apt/lists/*
+
+# 2. Enforce nonroot runtime identity (UID/GID 65532)
+RUN if getent passwd 1000 >/dev/null; then userdel -r "$(getent passwd 1000 | cut -d: -f1)" || true; fi && \
+    if getent group 1000 >/dev/null; then groupdel 1000 || true; fi && \
+    groupadd -g 65532 nonroot && \
+    useradd -r -u 65532 -g 65532 -m -s /bin/bash nonroot
+
+# 3. Create runtime directories and enforce ownership
+RUN mkdir -p /etc/prometheus /var/prometheus && \
+    chown -R 65532:65532 /etc/prometheus /var/prometheus
+
+# 4. Copy pre-staged binaries and configurations
+COPY --chown=65532:65532 staged/prometheus /usr/local/bin/prometheus
+COPY --chown=65532:65532 staged/promtool /usr/local/bin/promtool
+COPY --chown=65532:65532 staged/prometheus.yml /etc/prometheus/prometheus.yml
+
+RUN chmod 0755 /usr/local/bin/prometheus /usr/local/bin/promtool
+
+USER 65532:65532
+WORKDIR /var/prometheus
+
+EXPOSE 9191
+
+ENTRYPOINT ["prometheus"]
+CMD ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.path=/var/prometheus"]

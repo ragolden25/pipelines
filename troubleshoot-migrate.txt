@@ -59,3 +59,25 @@ grep -n 'timeout' /opt/ansible/molecule/run-*.sh
 
 The grep should show four lines: one in each Grafana runner and two in the Guacamole runner.
 Then run the migration script; the active-run check will pass.
+
+
+[root@ansible-forge ansible]# ./migrate_weekly.sh
+[08:41:50] before:
+    Filesystem                 Size  Used Avail Use% Mounted on
+    /dev/mapper/vg00-opt       100G   93G  7.7G  93% /opt
+    /dev/mapper/vg02-molecule  1.0T   50G  975G   5% /opt/ansible/molecule
+[08:41:50] --- avocado
+[08:41:50] copying 14G to /opt/ansible/molecule/weekly/avocado
+[08:43:09] verified: 472 files
+[08:43:11] added bind mount to /etc/fstab
+[08:43:11] mounted: /opt/ansible/files/avocado/weekly -> /opt/ansible/molecule/weekly/avocado (41 43 44 45 )
+[08:43:11] --- grafana
+[08:43:11] copying 13G to /opt/ansible/molecule/weekly/grafana
+[08:44:24] verified: 454 files
+[08:44:26] added bind mount to /etc/fstab
+[08:44:26] mounted: /opt/ansible/files/grafana/weekly -> /opt/ansible/molecule/weekly/grafana (41 43 44 45 )
+[08:44:26] after:
+    Filesystem                 Size  Used Avail Use% Mounted on
+    /dev/mapper/vg00-opt       100G   66G   35G  66% /opt
+    /dev/mapper/vg02-molecule  1.0T   77G  948G   8% /opt/ansible/molecule
+

@@ -1,0 +1,1 @@
+pgrep -af 'play_weekly_builds|play_weekly_molecule|molecule (test|converge|verify)'

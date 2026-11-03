@@ -1,0 +1,173 @@
+---
+# Builds the test artifact folder the role deploys from, the way a release would look:
+#   everything from avocado/current (configs, scripts, gpgkeys, ...)
+#   + this week's images of the class in MOL_IMAGE_CLASS (nucleus default, or ccop)
+#     from avocado/weekly/<newest week>/images
+#   + the build role's own GPG signatures for those images (found anywhere under that week's
+#     folder), so the role verifies the real build signatures exactly as production does.
+#     Molecule never signs anything.
+#   + docker-compose.yml produced for this week's images: the build renders it at build time and
+#     the role only copies it, so the quarterly one from current is rewritten here. Each image line
+#     gets the exact name:tag stored inside this week's image tarball (its manifest.json); for ccop
+#     the hardening settings are also removed (read_only, security_opt, cap_drop/cap_add, nginx user).
+#   + versions.env updated to the same versions
+# Nothing outside /opt/ansible/molecule/scratch/guacamole is changed.
+- name: Prepare the weekly test artifact folder
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    cur: /opt/ansible/files/avocado/current
+    weekly_root: /opt/ansible/files/avocado/weekly
+    art: /opt/ansible/molecule/scratch/guacamole/artifact
+    cls: "{{ lookup('env', 'MOL_IMAGE_CLASS') | default('nucleus', true) }}"
+    components:
+      - guacd
+      - guacamole
+      - postgres
+      - nginx
+  tasks:
+    - name: Newest weekly images folder that has this class
+      ansible.builtin.shell: "ls -td {{ weekly_root }}/*/images 2>/dev/null | while read -r d; do ls \"$d\"/{{ cls }}-guacamole-*.tar.gz >/dev/null 2>&1 && { echo \"$d\"; break; }; done"
+      args:
+        executable: /bin/bash
+      register: week_dir
+      changed_when: false
+
+    - name: A weekly images folder must exist
+      ansible.builtin.assert:
+        that: week_dir.stdout | length > 0
+        fail_msg: "No {{ cls }} Guacamole images under {{ weekly_root }}/*/images"
+
+    - name: Start from an empty test folder
+      ansible.builtin.file:
+        path: "{{ art }}"
+        state: absent
+
+    - name: Test folder structure
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+      loop:
+        - "{{ art }}"
+        - "{{ art }}/images"
+        - "{{ art }}/provenance/{{ cls }}"
+
+    - name: Copy everything from current except its images and provenance
+      ansible.builtin.shell: |
+        set -o pipefail
+        cd "{{ cur }}/" && tar --exclude=./images --exclude=./provenance -cf - . | tar -C "{{ art }}" -xf -
+      args:
+        executable: /bin/bash
+      changed_when: true
+
+    - name: Copy this week's images into the test folder and read their real name:tag
+      ansible.builtin.shell: |
+        set -o pipefail
+        for c in {{ components | join(' ') }}; do
+          f=$(ls -t "{{ week_dir.stdout }}"/{{ cls }}-"$c"-*.tar.gz 2>/dev/null | head -1)
+          [ -n "$f" ] || { echo "missing weekly {{ cls }} image for $c" >&2; exit 1; }
+          cp -p "$f" "{{ art }}/images/$(basename "$f")"
+          tag=$(tar -xzOf "$f" manifest.json 2>/dev/null | python3 -c 'import json,sys; print(json.load(sys.stdin)[0]["RepoTags"][0])') \
+            || { echo "can't read the image name from $f" >&2; exit 1; }
+          echo "$c $tag"
+        done
+      args:
+        executable: /bin/bash
+      register: linked
+      changed_when: true
+
+    - name: Find the build role's signatures for this week's images
+      ansible.builtin.find:
+        paths: "{{ week_dir.stdout | dirname }}"
+        patterns: "{{ cls }}-*.tar.gz.asc"
+        recurse: true
+      register: sigs
+
+    - name: Every image must have a build signature
+      ansible.builtin.assert:
+        that: >-
+          (linked.stdout_lines | map('split', ' ') | map('first') | list)
+          | reject('in', sigs.files | map(attribute='path') | map('basename')
+                     | map('regex_replace', '^' ~ cls ~ '-([a-z0-9]+)-.*$', '\\1') | list)
+          | list | length == 0
+        fail_msg: >-
+          Not every weekly {{ cls }} image has a build signature (.asc) under {{ week_dir.stdout | dirname }}.
+          found={{ sigs.files | map(attribute='path') | map('basename') | list }}
+
+    - name: Copy the build signatures into the test folder
+      ansible.builtin.copy:
+        src: "{{ item.path }}"
+        dest: "{{ art }}/provenance/{{ cls }}/{{ item.path | basename }}"
+        mode: "0644"
+      loop: "{{ sigs.files }}"
+      loop_control:
+        label: "{{ item.path | basename }}"
+
+    - name: Produce this week's docker-compose.yml
+      ansible.builtin.shell: |
+        python3 - "{{ art }}/docker-compose.yml" "{{ cls }}" <<'PY'
+        import os, re, sys
+        path, cls = sys.argv[1], sys.argv[2]
+        tags = dict(l.split(" ", 1) for l in os.environ["WEEKLY_TAGS"].splitlines() if l.strip())
+        out, skip_list, missing = [], False, []
+        for line in open(path).read().splitlines():
+            s = line.strip()
+            if skip_list:
+                if s.startswith("- "):
+                    continue
+                skip_list = False
+            if cls == "ccop":
+                if s in ("security_opt:", "cap_drop:", "cap_add:"):
+                    skip_list = True
+                    continue
+                if s.startswith("read_only:") or re.match(r'user:\s*["\']?65532', s):
+                    continue
+            m = re.match(r'^(\s*image:\s*)["\']?([^"\'\s]+)["\']?\s*$', line)
+            if m:
+                comp = m.group(2).rsplit(":", 1)[0].split("/")[-1]
+                if comp not in tags:
+                    missing.append(m.group(2))
+                else:
+                    line = m.group(1) + tags[comp]
+            out.append(line)
+        if missing:
+            sys.exit("compose uses images with no weekly image: %s" % missing)
+        open(path, "w").write("\n".join(out) + "\n")
+        for l in out:
+            if l.strip().startswith("image:"):
+                print(l.strip())
+        PY
+      args:
+        executable: /bin/bash
+      environment:
+        WEEKLY_TAGS: "{{ linked.stdout }}"
+      register: compose
+      changed_when: true
+
+    - name: Point versions.env at the weekly image versions
+      ansible.builtin.shell: |
+        f="{{ art }}/versions.env"
+        touch "$f"
+        while read -r comp tag; do
+          ver="${tag##*:}"
+          key="$(echo "$comp" | tr 'a-z' 'A-Z')_VERSION"
+          if grep -q "^${key}=" "$f"; then
+            sed -i -E "s|^${key}=.*|${key}=\"${ver}\"|" "$f"
+          else
+            echo "${key}=\"${ver}\"" >> "$f"
+          fi
+        done <<< "{{ linked.stdout }}"
+        grep -E '_VERSION=' "$f"
+      args:
+        executable: /bin/bash
+      register: versions
+      changed_when: true
+
+    - name: What this run deploys
+      ansible.builtin.debug:
+        msg:
+          - "weekly images: {{ week_dir.stdout }}"
+          - "{{ compose.stdout_lines }}"
+          - "{{ versions.stdout_lines }}"

@@ -37,7 +37,48 @@ cd /opt/ansible/molecule/logs && for p in 'grafana12-2' 'guac16-ccop-deploy' 'gu
 
 ls -l /opt/ansible/nucleus/roles/weekly_common/tasks/sign_weekly_images.yml; grep -n sign_weekly /opt/ansible/nucleus/roles/weekly_common/tasks/main.yml; grep -n -i 'weekly/\|images' /opt/ansible/nucleus/roles/weekly_common/tasks/finish.yml | head -8; echo ===== grafana; tail -15 "$(ls -t /opt/ansible/molecule/logs/grafana12-2*.log | head -1)"
 
+[root@ansible-forge logs]# ls -l /opt/ansible/nucleus/roles/weekly_common/tasks/sign_weekly_images.yml; grep -n sign_weekly /opt/ansible/nucleus/roles/weekly_common/tasks/main.yml; grep -n -i 'weekly/\|images' /opt/ansible/nucleus/roles/weekly_common/tasks/finish.yml | head -8; echo ===== grafana; tail -15 "$(ls -t /opt/ansible/molecule/logs/grafana12-2*.log | head -1)"
+-rw-rw-r--. 1 ansible ansible-admin 1681 Nov  2 12:10 /opt/ansible/nucleus/roles/weekly_common/tasks/sign_weekly_images.yml
+2:# Always runs, success or not: record the result, remove the probe images, prune old weeks,
+21:- name: Weekly - remove the probe images
+===== grafana
+  File "/opt/ansible/molecule/venv/lib64/python3.11/site-packages/molecule/command/base.py", line 74, in __init__
+    self._setup()
+  File "/opt/ansible/molecule/venv/lib64/python3.11/site-packages/molecule/command/base.py", line 95, in _setup
+    self._config.write()
+  File "/opt/ansible/molecule/venv/lib64/python3.11/site-packages/molecule/config.py", line 135, in write
+    util.write_file(self.config_file, util.safe_dump(self.config))
+  File "/opt/ansible/molecule/venv/lib64/python3.11/site-packages/molecule/util.py", line 216, in write_file
+    filename.write_text(content)
+  File "/usr/lib64/python3.11/pathlib.py", line 1078, in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib64/python3.11/pathlib.py", line 1044, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+PermissionError: [Errno 13] Permission denied: '/opt/ansible/molecule/cache/molecule/configure_grafana_stack/grafana12/molecule.yml'
+
+
+
+
+
 To keep today’s deadline on track, sign week 45 by hand now (as root), then rerun the Molecule script:
 
 for W in /opt/ansible/files/avocado/weekly/45 /opt/ansible/files/grafana/weekly/45; do for f in $W/images/*.tar.gz; do b=$(basename "$f"); c=${b%%-*}; mkdir -p $W/provenance/$c && gpg --batch --yes --pinentry-mode loopback --detach-sign --output $W/provenance/$c/$b.asc "$f" && chown ansible:ansible $W/provenance/$c/$b.asc && chmod 0770 $W/provenance/$c/$b.asc && echo "signed $b"; done; done
 
+signed ccop-guacamole-1.6.0.tar.gz
+signed ccop-guacd-1.6.0.tar.gz
+signed ccop-nginx-1.31.8.tar.gz
+signed ccop-postgres-18.6.tar.gz
+signed nucleus-guacamole-1.6.0.tar.gz
+signed nucleus-guacd-1.6.0.tar.gz
+signed nucleus-nginx-1.31.8.tar.gz
+signed nucleus-postgres-18.6.tar.gz
+signed ccop-grafana-12.4.14.tar.gz
+signed ccop-idrac-2.6.3.tar.gz
+signed ccop-nginx-1.31.8.tar.gz
+signed ccop-prometheus-3.15.1.tar.gz
+signed nucleus-grafana-12.4.14.tar.gz
+signed nucleus-idrac-2.6.3.tar.gz
+signed nucleus-nginx-1.31.8.tar.gz
+signed nucleus-prometheus-3.15.1.tar.gz

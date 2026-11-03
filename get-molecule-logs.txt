@@ -1,0 +1,1 @@
+cd /opt/ansible/molecule/logs && for p in 'grafana12-2' 'guac16-ccop-deploy' 'guac16-nucleus-deploy'; do f=$(ls -t ${p}*.log 2>/dev/null | head -1); echo "===== $f"; grep -n -B3 -A12 -m1 -E 'fatal:|FAILED!|ERROR!|CRITICAL' "$f" | cut -c1-400; done

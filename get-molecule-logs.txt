@@ -33,3 +33,11 @@ cd /opt/ansible/molecule/logs && for p in 'grafana12-2' 'guac16-ccop-deploy' 'gu
 46-localhost                  : ok=7    changed=3    unreachable=0    failed=1    skipped=0    rescued=0    ignored=0
 47-
 48-CRITICAL Ansible return code was 2, command was: ansible-playbook --extra-vars 'avocado_artifact_dir=/opt/ansible/molecule/scratch/guacamole/artifact guac_image_class=nucleus' --inventory /opt/ansible/molecule/cache/molecule/configure_guacamole/guac16/inventory --skip-tags molecule-notest,notest /opt/ansible/nucleus/roles/configure_guacamole/molecule/guac16/prepare.yml
+
+
+ls -l /opt/ansible/nucleus/roles/weekly_common/tasks/sign_weekly_images.yml; grep -n sign_weekly /opt/ansible/nucleus/roles/weekly_common/tasks/main.yml; grep -n -i 'weekly/\|images' /opt/ansible/nucleus/roles/weekly_common/tasks/finish.yml | head -8; echo ===== grafana; tail -15 "$(ls -t /opt/ansible/molecule/logs/grafana12-2*.log | head -1)"
+
+To keep today’s deadline on track, sign week 45 by hand now (as root), then rerun the Molecule script:
+
+for W in /opt/ansible/files/avocado/weekly/45 /opt/ansible/files/grafana/weekly/45; do for f in $W/images/*.tar.gz; do b=$(basename "$f"); c=${b%%-*}; mkdir -p $W/provenance/$c && gpg --batch --yes --pinentry-mode loopback --detach-sign --output $W/provenance/$c/$b.asc "$f" && chown ansible:ansible $W/provenance/$c/$b.asc && chmod 0770 $W/provenance/$c/$b.asc && echo "signed $b"; done; done
+

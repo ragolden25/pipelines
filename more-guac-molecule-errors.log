@@ -550,3 +550,6 @@ sed -i 's|weekly_ns: "weekly/{{ weekly_component.stack }}/"|weekly_ns: ""|' /opt
 grep -n 'weekly_ns:' /opt/ansible/nucleus/roles/weekly_common/tasks/context.yml
 
 
+[ansible@ansible-forge ~]$ sed -i 's|weekly_ns: "weekly/{{ weekly_component.stack }}/"|weekly_ns: ""|' /opt/ansible/nucleus/roles/weekly_common/tasks/context.yml
+grep -n 'weekly_ns:' /opt/ansible/nucleus/roles/weekly_common/tasks/context.yml
+22:    weekly_ns: ""

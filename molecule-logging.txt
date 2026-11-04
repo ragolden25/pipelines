@@ -1,0 +1,13 @@
+# Molecule logs: mollog [pattern]  -> show the newest matching log's first failure + last 20 lines
+#                mollog -f [pattern] -> follow (tail -f) the newest matching log
+#                mollogs -> list the 8 newest logs
+mollogs() { ls -lt /opt/ansible/molecule/logs/ | head -9; }
+mollog() {
+  local follow=0; [ "${1:-}" = -f ] && { follow=1; shift; }
+  local f; f=$(ls -t /opt/ansible/molecule/logs/*${1:-}*.log 2>/dev/null | head -1)
+  [ -n "$f" ] || { echo "no log matching '${1:-}'"; return 1; }
+  echo "== $f"
+  if [ $follow = 1 ]; then tail -f "$f"; return; fi
+  grep -n -m1 -B3 -A10 -E 'fatal:|FAILED!|ERROR!' "$f" | cut -c1-400
+  echo "-- last lines:"; tail -20 "$f"
+}

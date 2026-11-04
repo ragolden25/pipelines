@@ -40,7 +40,7 @@ echo "# Hardened image facts: $STACK"
 echo
 echo "Generated $(date -Iseconds) on $(hostname -s) from \`$IMG_DIR\`. Read from the image files themselves."
 echo
-echo "| Image | User | Entrypoint | Shells | Network/download tools | Package managers | Admin/setuid tools | setuid/setgid files | dpkg packages |"
+echo "| Image | User | Entrypoint | Shells | Network/download tools | Package managers | Admin/setuid tools | setuid/setgid files | dpkg database |"
 echo "|---|---|---|---|---|---|---|---|---|"
 } | tee "$OUT"
 
@@ -58,7 +58,13 @@ for cls in $CLASSES; do
     # merged-usr images: /bin is a symlink to usr/bin, so usr/bin/x is also reachable as bin/x
     if grep -qE '^l.* (\./)?bin -> /?usr/bin$' "$V"; then sed -n 's|^usr/bin/|bin/|p' "$L" > "$L.b"; cat "$L.b" >> "$L"; rm -f "$L.b"; fi
     suid=$(awk '$1 ~ /^-..[sS]|^-.....[sS]/ {print $NF}' "$V" | sed 's|^\./||' | xargs -r -n1 basename | sort -u | tr '\n' ' ')
-    dpkg=$(docker cp "$cid":/var/lib/dpkg/status - 2>/dev/null | tar -xOf - 2>/dev/null | grep -c '^Package:')
+    # dpkg database: present (scanners can see OS packages) or removed (they can't)
+    if grep -qxF 'var/lib/dpkg/status' "$L"; then
+      n=$(docker cp "$cid":/var/lib/dpkg/status - 2>/dev/null | tar -xOf - 2>/dev/null | grep -c '^Package:')
+      dpkg="present (${n:-?} packages)"
+    else
+      dpkg="removed"
+    fi
     [ -s "$V" ] || dpkg="?"
     echo "| \`$tag\` | $user | \`$ep\` | $(present "$L" $CHECK_SHELLS) | $(present "$L" $CHECK_NET) | $(present "$L" $CHECK_PKG) | $(present "$L" $CHECK_ADMIN) | ${suid:-none} | ${dpkg:-0} |" | tee -a "$OUT"
     docker rm -f "$cid" >/dev/null 2>&1; docker rmi "$tag" >/dev/null 2>&1; rm -f "$L" "$V"
@@ -73,6 +79,7 @@ if [ -n "$COMPOSE" ] && [ -f "$COMPOSE" ]; then
   "$PY" - "$COMPOSE" <<'PY'
 import re, sys, yaml
 txt = open(sys.argv[1]).read()
+txt = re.sub(r"\{#.*?#\}", "", txt, flags=re.S)             # template comments
 txt = re.sub(r"\{%.*?%\}", "", txt)                       # template control lines
 txt = re.sub(r"\{\{\s*([^}]*?)\s*\}\}", r"<\1>", txt)      # template variables -> <name>
 d = yaml.safe_load(txt) or {}

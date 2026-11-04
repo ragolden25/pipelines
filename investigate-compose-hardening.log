@@ -1,0 +1,74 @@
+Don't know why it had permission issues but it definitely didn't even create the file it said it would.
+I even did an updatedb and tried to locate the filename, it was NOT found.
+
+
+[ansible@ansible-forge ~]$ bash investigate_compose_hardening.sh
+tee: /opt/ansible/molecule/reports/compose-hardening-2026-11-04.md: Permission denied
+# Compose hardening: investigation
+
+Generated 2026-11-04T12:21:39-05:00. Passwords are never shown, only whether they are set.
+
+## Guacamole host (guac)
+
+### 1. Guacamole database password source
+- guacamole.properties: /var/lib/containers/guacamole/guacamole.properties
+  - `postgresql-hostname`: guac-db
+  - `postgresql-database`: guacamole_db
+  - `postgresql-username`: guacuser
+  - `enable-environment-properties`: not set
+  - `postgresql-password`: set (8 characters)
+  - file mode/owner: 640 UNKNOWN:UNKNOWN
+- container environment `POSTGRESQL_PASSWORD`: set (8 characters)
+- (Guacamole only reads environment variables if `enable-environment-properties: true` is in guacamole.properties,
+  or if the image's startup script turns them into properties.)
+
+### 2a. Does guacd need root? What guacd is asked to write
+```
+parameter_name | connections | paths
+(0 rows)
+```
+- files guacd sees under /etc/guacamole (owner and mode):
+```
+total 4
+drwxr-x---. 2 65532 65532  54 Nov  4 09:48 extensions
+-rw-r-----. 1 65532 65532 184 Nov  4 09:48 guacamole.properties
+drwxr-x---. 2 65532 65532  35 Nov  4 09:48 lib
+```
+- guacd's user inside the running container: uid=0(root) gid=0(root) groups=0(root)
+
+### 2b. Test: same guacd image as UID 65532:65532 (separate container, port 127.0.0.1:14822)
+- image: `nucleus/guacd:1.6.0`
+- still running after 6 s: true
+- port 14822: accepting connections
+- its log:
+```
+guacd[1]: INFO: Guacamole proxy daemon (guacd) version 1.6.0 started
+guacd[1]: INFO: Listening on host 0.0.0.0, port 4822
+```
+- test container removed
+
+### 3. Resource use: Guacamole stack
+
+| Container | CPU now | Memory now | Memory limit | Peak memory since start |
+|---|---|---|---|---|
+| guacamole | 0.23% | 165.4MiB | 1GiB | 203 MiB |
+| guacd | 0.00% | 10.49MiB | 256MiB | 18 MiB |
+| guac-db | 0.04% | 35.16MiB | 1GiB | 104 MiB |
+| nginx | 0.00% | 3.746MiB | 128MiB | 10 MiB |
+
+Host: 2 CPUs, 7681 MiB RAM, up up 4 weeks, 2 days, 1 hour, 40 minutes
+
+## Grafana host (std1)
+
+### 3. Resource use: Grafana stack (no limits set today)
+
+| Container | CPU now | Memory now | Memory limit | Peak memory since start |
+|---|---|---|---|---|
+| grafana | 0.48% | 141.5MiB | 7.767GiB | 150 MiB |
+| idrac_exporter | 0.78% | 12.48MiB | 7.767GiB | 23 MiB |
+| nginx | 0.00% | 4.73MiB | 7.767GiB | 30 MiB |
+| prometheus | 0.73% | 95.39MiB | 7.767GiB | 513 MiB |
+
+Host: 2 CPUs, 7953 MiB RAM, up up 6 weeks, 1 hour, 54 minutes
+
+written: /opt/ansible/molecule/reports/compose-hardening-2026-11-04.md

@@ -160,5 +160,6 @@ USER postgres
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["postgres"]
 
-
+F="/opt/ansible/build/postgres/fy27q1/Dockerfile.postgres.functional /opt/ansible/build/postgres/weekly/fy27q1/45/Dockerfile.postgres.functional /opt/ansible/files/avocado/fy27q1/dockerfiles/Dockerfile.postgres.functional /home/ansible/guacamole/dockerfiles/Dockerfile.postgres.functional"
+grep -l 'Initialize PGDATA' $F; sed -i '/^# Initialize PGDATA$/,/initdb" -D "\${PGDATA}"$/d' $F; echo "still has it:"; grep -l 'bin/initdb' $F; echo "(none above = fixed)"
 I wonder if the docker-compose.yml file for ccop is for user postgres or the user 66532?

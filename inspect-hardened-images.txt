@@ -1,0 +1,10 @@
+inspect_hardened_images.sh reads each release’s image files and reports, per image: the user it runs as, its entrypoint, and whether it contains shells, 
+download or network tools, package managers, admin or setuid tools, plus its setuid files and dpkg package count. 
+It also lists each service’s runtime settings from the stack’s compose file. It’s read-only: 
+images are loaded only to look inside them, nothing is run, and everything it loads is removed afterwards.
+
+bash inspect_hardened_images.sh /opt/ansible/files/avocado/fy27q1/images /opt/ansible/files/avocado/docker-compose.yml.j2
+bash inspect_hardened_images.sh /opt/ansible/files/grafana/fy27q1/images /opt/ansible/files/grafana/docker-compose.yml.j2
+
+Each run prints a table and saves it under /opt/ansible/molecule/reports/. Paste or
+attach both, and I’ll write the two statements from them. I’ve assumed the Grafana

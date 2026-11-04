@@ -1,0 +1,52 @@
+[root@ansible-forge bin]# bash inspect_hardened_images.sh /opt/ansible/files/avocado/fy27q1/images /opt/ansible/files/avocado/docker-compose.yml.j2
+# Hardened image facts: avocado/fy27q1
+
+Generated 2026-11-04T11:43:33-05:00 on ansible-forge from `/opt/ansible/files/avocado/fy27q1/images`. Read from the image files themselves.
+
+| Image | User | Entrypoint | Shells | Network/download tools | Package managers | Admin/setuid tools | setuid/setgid files | dpkg packages |
+|---|---|---|---|---|---|---|---|---|
+| `nucleus/guacamole:1.6.0` | tomcat | `bin/catalina.sh run` | dash sh | none | none | mount | mount newgrp umount unix_chkpwd  | 0 |
+| `nucleus/guacd:1.6.0` | root (unset) | `/usr/local/sbin/guacd -f -b 0.0.0.0` | none | none | none | mount | mount newgrp umount unix_chkpwd  | 0 |
+| `nucleus/nginx:1.31.6` | 65532:65532 | `/usr/sbin/nginx -g daemon off;` | none | none | none | mount | mount newgrp umount unix_chkpwd  | 0 |
+| `nucleus/postgres:18.6` | 70:70 | `/usr/local/bin/docker-entrypoint.sh postgres` | bash dash sh | none | none | mount | mount newgrp umount unix_chkpwd  | 0 |
+
+## Runtime settings from `/opt/ansible/files/avocado/docker-compose.yml.j2`
+
+Traceback (most recent call last):
+  File "<stdin>", line 5, in <module>
+  File "/opt/ansible/molecule/venv/lib64/python3.11/site-packages/yaml/__init__.py", line 125, in safe_load
+    return load(stream, SafeLoader)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/ansible/molecule/venv/lib64/python3.11/site-packages/yaml/__init__.py", line 81, in load
+    return loader.get_single_data()
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/ansible/molecule/venv/lib64/python3.11/site-packages/yaml/constructor.py", line 49, in get_single_data
+    node = self.get_single_node()
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/ansible/molecule/venv/lib64/python3.11/site-packages/yaml/composer.py", line 36, in get_single_node
+    document = self.compose_document()
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/ansible/molecule/venv/lib64/python3.11/site-packages/yaml/composer.py", line 55, in compose_document
+    node = self.compose_node(None, None)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/ansible/molecule/venv/lib64/python3.11/site-packages/yaml/composer.py", line 84, in compose_node
+    node = self.compose_mapping_node(anchor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/ansible/molecule/venv/lib64/python3.11/site-packages/yaml/composer.py", line 127, in compose_mapping_node
+    while not self.check_event(MappingEndEvent):
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/ansible/molecule/venv/lib64/python3.11/site-packages/yaml/parser.py", line 98, in check_event
+    self.current_event = self.state()
+                         ^^^^^^^^^^^^
+  File "/opt/ansible/molecule/venv/lib64/python3.11/site-packages/yaml/parser.py", line 549, in parse_flow_mapping_key
+    raise ParserError("while parsing a flow mapping", self.marks[-1],
+yaml.parser.ParserError: while parsing a flow mapping
+  in "<unicode string>", line 1, column 1:
+    {# Optional settings (defaults p ...
+    ^
+expected ',' or '}', but got '<scalar>'
+  in "<unicode string>", line 7, column 1:
+    services:
+    ^
+
+written: /opt/ansible/molecule/reports/hardened-images-avocado-fy27q1-2026-11-04.md

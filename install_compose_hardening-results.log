@@ -19,3 +19,7 @@ ATTENTION - these role files still use POSTGRES_PASSWORD (paste them to Claude b
 [13:39:09] done. Next, as ansible:
     /opt/ansible/molecule/run-guac16.sh deploy ccop && /opt/ansible/molecule/run-guac16.sh verify ccop; /opt/ansible/molecule/run-guac16.sh deploy && /opt/ansible/molecule/run-guac16.sh verify
     /opt/ansible/molecule/run-grafana12-image.sh nucleus
+
+
+/opt/ansible/molecule/run-guac16.sh deploy ccop && /opt/ansible/molecule/run-guac16.sh verify ccop; /opt/ansible/molecule/run-guac16.sh deploy && /opt/ansible/molecule/run-guac16.sh verify
+/opt/ansible/molecule/run-grafana12-image.sh nucleus

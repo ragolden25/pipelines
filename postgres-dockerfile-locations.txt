@@ -1,0 +1,164 @@
+
+[root@ansible-forge 45]# mollog ccop
+== /opt/ansible/molecule/logs/guac16-ccop-deploy-2026-11-04-0651.log
+350-ok: [guac]
+351-
+352-TASK [/opt/ansible/nucleus/roles/configure_guacamole : Import Guacamole DB] ****
+353:fatal: [guac]: FAILED! => {"changed": true, "cmd": ["/var/lib/containers/scripts/import_guac_db.sh"], "delta": "0:00:00.126093", "end": "2026-11-04 06:44:57.248260", "msg": "non-zero return code", "rc": 2, "start": "2026-11-04 06:44:57.122167", "stderr": "psql: error: connection to server on socket \"/tmp/.s.PGSQL.5432\" failed: FATAL:  password authentication failed for user \"guacuser\"
+354-
+355-PLAY RECAP *********************************************************************
+356-guac                       : ok=72   changed=35   unreachable=0    failed=1    skipped=3    rescued=0    ignored=0
+357-
+358-CRITICAL Ansible return code was 2, command was: ansible-playbook --extra-vars 'avocado_artifact_dir=/opt/ansible/molecule/scratch/guacamole/artifact guac_image_class=ccop' --inventory /opt/ansible/molecule/cache/molecule/configure_guacamole/guac16/inventory --skip-tags molecule-notest,notest /opt/ansible/nucleus/roles/configure_guacamole/molecule/guac16/converge.yml
+-- last lines:
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Copy guac_export.sql file] ***
+ok: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Install verification script] ***
+ok: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Install import script] ***
+ok: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Validate Guacamole DB dump before import] ***
+ok: [guac]
+
+TASK [/opt/ansible/nucleus/roles/configure_guacamole : Import Guacamole DB] ****
+fatal: [guac]: FAILED! => {"changed": true, "cmd": ["/var/lib/containers/scripts/import_guac_db.sh"], "delta": "0:00:00.126093", "end": "2026-11-04 06:44:57.248260", "msg": "non-zero return code", "rc": 2, "start": "2026-11-04 06:44:57.122167", "stderr": "psql: error: connection to server on socket \"/tmp/.s.PGSQL.5432\" failed: FATAL:  password authentication failed for user \"guacuser\"", "stderr_lines": ["psql: error: connection to server on socket \"/tmp/.s.PGSQL.5432\" failed: FATAL:  password authentication failed for user \"guacuser\""], "stdout": "=== Guacamole DB Dump Verification ===\n[OK] Dump file exists\n[OK] Dump file is not empty\n[OK] Found table: guacamole_connection\n[OK] Found table: guacamole_connection_parameter\n[OK] Found table: guacamole_user\n[OK] Found table: guacamole_user_permission\n[OK] Found table: guacamole_connection_permission\n[OK] Connection rows detected\n[OK] SQL terminator found\n=== Verification Complete: Dump is valid ===", "stdout_lines": ["=== Guacamole DB Dump Verification ===", "[OK] Dump file exists", "[OK] Dump file is not empty", "[OK] Found table: guacamole_connection", "[OK] Found table: guacamole_connection_parameter", "[OK] Found table: guacamole_user", "[OK] Found table: guacamole_user_permission", "[OK] Found table: guacamole_connection_permission", "[OK] Connection rows detected", "[OK] SQL terminator found", "=== Verification Complete: Dump is valid ==="]}
+
+PLAY RECAP *********************************************************************
+guac                       : ok=72   changed=35   unreachable=0    failed=1    skipped=3    rescued=0    ignored=0
+
+CRITICAL Ansible return code was 2, command was: ansible-playbook --extra-vars 'avocado_artifact_dir=/opt/ansible/molecule/scratch/guacamole/artifact guac_image_class=ccop' --inventory /opt/ansible/molecule/cache/molecule/configure_guacamole/guac16/inventory --skip-tags molecule-notest,notest /opt/ansible/nucleus/roles/configure_guacamole/molecule/guac16/converge.yml
+
+
+[root@ansible-forge 44]# locate Dockerfile.postgres.functional
+/home/ansible/guacamole/dockerfiles/Dockerfile.postgres.functional
+/opt/ansible/build/postgres/fy26q3/Dockerfile.postgres.functional
+/opt/ansible/build/postgres/fy26q4/Dockerfile.postgres.functional
+/opt/ansible/build/postgres/fy26q4/archive/Dockerfile.postgres.functional-21aug
+/opt/ansible/build/postgres/fy27q1/Dockerfile.postgres.functional
+/opt/ansible/build/postgres/fy27q1/archive/Dockerfile.postgres.functional-21aug
+/opt/ansible/build/postgres/weekly/fy27q1/43/Dockerfile.postgres.functional
+/opt/ansible/build/postgres/weekly/fy27q1/43/archive/Dockerfile.postgres.functional-21aug
+/opt/ansible/build/postgres/weekly/fy27q1/44/Dockerfile.postgres.functional
+/opt/ansible/build/postgres/weekly/fy27q1/44/archive/Dockerfile.postgres.functional-21aug
+/opt/ansible/build/postgres/weekly/fy27q1/45/Dockerfile.postgres.functional
+/opt/ansible/build/postgres/weekly/fy27q1/45/archive/Dockerfile.postgres.functional-21aug
+/opt/ansible/files/avocado/fy26q3/dockerfiles/Dockerfile.postgres.functional
+/opt/ansible/files/avocado/fy26q4/dockerfiles/Dockerfile.postgres.functional
+/opt/ansible/files/avocado/fy26q4/provenance/avocado-sast/Dockerfile.postgres.functional.20260928T190812Z.sast.txt
+/opt/ansible/files/avocado/fy27q1/dockerfiles/Dockerfile.postgres.functional
+/opt/ansible/files/avocado/fy27q1/provenance/avocado-sast/Dockerfile.postgres.functional.20260928T190812Z.sast.txt
+/opt/ansible/files/avocado/fy27q1/provenance/avocado-sast/Dockerfile.postgres.functional.20261005T143049Z.sast.txt
+/opt/ansible/files/avocado/fy27q1/provenance/avocado-sast/Dockerfile.postgres.functional.20261006T133723Z.sast.txt
+/opt/ansible/files/avocado/fy27q1/provenance/avocado-sast/Dockerfile.postgres.functional.20261006T192903Z.sast.txt
+/opt/ansible/shipping/archive/fy26q4/dockerfiles/Dockerfile.postgres.functional
+/var/lib/containers/dockerfiles/Dockerfile.postgres.functional
+[root@ansible-forge 44]# cd /opt/ansible/build/postgres/weekly/fy27q1/45/
+[root@ansible-forge 45]# ll
+total 52
+drwx------. 2 ansible ansible  4096 Sep 28 12:05 archive
+-rw-------. 1 ansible ansible 14551 Jun 12 07:40 docker-entrypoint.sh
+-rw-------. 1 ansible ansible  2674 Nov  3 15:21 Dockerfile.postgres.functional
+-rw-------. 1 ansible ansible  6396 Oct  2 12:37 Dockerfile.postgres.hardened
+-rwx------. 1 ansible ansible  2409 Sep 28 10:01 entrypoint_introspect.sh
+-rw-------. 1 ansible ansible   631 Jun 10 09:50 pg_hba.conf
+-rw-------. 1 ansible ansible  1649 Jun 10 09:51 postgresql.conf
+drwx------. 2 ansible ansible    88 Jul 13 16:44 reducer
+-rw-r--r--. 1 ansible ansible    45 Nov  3 16:07 result.env
+drwx------. 6 ansible ansible    77 Nov  1 02:14 staged
+-rw-------. 1 ansible ansible     4 Jun  8 15:51 VERSION
+
+Dockerfile.postgres.functional
+# ------------------------------------------------------------
+# Functional PostgreSQL runtime image (ccop/postgres:<version>)
+# ------------------------------------------------------------
+
+FROM container-forge/debian13-slim:latest
+
+ARG POSTGRES_VERSION
+ARG POSTGRES_MAJOR
+ENV DEBIAN_FRONTEND=noninteractive
+
+ENV PG_PREFIX="/opt/postgresql/${POSTGRES_VERSION}" \
+    PGDATA="/var/lib/postgresql/${POSTGRES_MAJOR}/data"
+
+# Runtime dependencies (minimal, no build deps)
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+      ca-certificates \
+      libcurl4t64 \
+      libgssapi-krb5-2 \
+      libicu76 \
+      libldap2 \
+      liblz4-1 \
+      libnuma1 \
+      libpam0g \
+      libreadline8t64 \
+      libselinux1 \
+      libssl3t64 \
+      liburing2 \
+      libuuid1 \
+      libxml2 \
+      libxslt1.1 \
+      libzstd1 \
+      locales \
+      tzdata \
+      gosu; \
+    rm -rf /var/lib/apt/lists/*
+
+# Locales
+RUN set -eux; \
+    echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen; \
+    locale-gen en_US.UTF-8
+
+ENV LANG=en_US.UTF-8 \
+    LANGUAGE=en_US:en \
+    LC_ALL=en_US.UTF-8 \
+    PATH=${PG_PREFIX}/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# Create postgres user/group and PGDATA directory
+RUN set -eux; \
+    groupadd -g 70 postgres || true; \
+    useradd -u 70 -g 70 -d /var/lib/postgresql -s /bin/bash postgres || true; \
+    mkdir -p "${PGDATA}"; \
+    chown -R postgres:postgres /var/lib/postgresql; \
+    chmod 0700 "${PGDATA}"
+
+# Copy staged PostgreSQL runtime (from build quarter staged/, populated by
+# sync-latest-version.sh). staged/ is flat: bin/, include/, lib/, share/,
+# inventory.env sit directly inside it -- no opt/postgresql/<version>
+# nesting. Copied per-subdirectory so inventory.env (pipeline metadata)
+# never ends up in the image.
+COPY --chown=postgres:postgres staged/bin     ${PG_PREFIX}/bin
+COPY --chown=postgres:postgres staged/include ${PG_PREFIX}/include
+COPY --chown=postgres:postgres staged/lib     ${PG_PREFIX}/lib
+COPY --chown=postgres:postgres staged/share   ${PG_PREFIX}/share
+
+# Copy entrypoint (same as before)
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod 0755 /usr/local/bin/docker-entrypoint.sh
+
+# Initialize PGDATA
+RUN set -eux; \
+    mkdir -p "${PGDATA}"; \
+    chown postgres:postgres "${PGDATA}"; \
+    chmod 0700 "${PGDATA}"; \
+    gosu postgres "${PG_PREFIX}/bin/initdb" -D "${PGDATA}"
+
+RUN mkdir -p /docker-entrypoint-initdb.d \
+    && chmod 0755 /docker-entrypoint-initdb.d \
+    && chown -R postgres:postgres /docker-entrypoint-initdb.d
+
+EXPOSE 5432
+
+USER postgres
+
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+CMD ["postgres"]
+
+
+I wonder if the docker-compose.yml file for ccop is for user postgres or the user 66532?

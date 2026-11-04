@@ -1,0 +1,21 @@
+[root@ansible-forge ansible]# ./install_compose_hardening.sh
+[13:39:04] using /home/ansible/compose-hardening.tar.gz
+[13:39:04] backup of the files being replaced: /root/pre-hardening-backup-2026-11-04-133904.tar.gz
+    installed /opt/ansible/nucleus/roles/configure_grafana_stack/molecule/grafana12-image/verify.yml
+    installed /opt/ansible/nucleus/roles/configure_guacamole/tasks/db-secret.yml
+    installed /opt/ansible/nucleus/roles/configure_guacamole/tasks/main.yml
+    installed /opt/ansible/files/avocado/docker-compose.yml.j2
+    installed /opt/ansible/files/grafana/docker-compose.yml.j2
+[13:39:04] checks passed
+
+ATTENTION - these role files still use POSTGRES_PASSWORD (paste them to Claude before testing):
+    /opt/ansible/nucleus/roles/configure_guacamole/tasks/db-import.yml:12:# POSTGRES_USER/POSTGRES_PASSWORD/POSTGRES_DB (guacuser/guacpass/
+
+[13:39:04] re-rendering this week's Guacamole compose files
+[WARNING]: Skipping callback plugin 'stig_xml', unable to load
+[13:39:09] rendered /opt/ansible/files/avocado/weekly/45/docker-compose.yml (and -ccop) with the new settings
+[13:39:09] no password in the rendered compose files
+
+[13:39:09] done. Next, as ansible:
+    /opt/ansible/molecule/run-guac16.sh deploy ccop && /opt/ansible/molecule/run-guac16.sh verify ccop; /opt/ansible/molecule/run-guac16.sh deploy && /opt/ansible/molecule/run-guac16.sh verify
+    /opt/ansible/molecule/run-grafana12-image.sh nucleus

@@ -1,0 +1,1 @@
+sed -i 's/-size -1M/-size -1024k/' /home/ansible/collect_grafana_build.sh

@@ -1,0 +1,31 @@
+Need to update the following files that deal with signing to migrate signatures from container-forge directory in provenance to new provenance/signatures directory.
+
+Each pipeline grafana and guacamole has the following files dealing with signatures:
+
+-	sign_base_image.yml
+-	sign_functional_images.yml
+-	sign_hardened_images.yml
+
+Then we have the daily sync script that pulls fresh images from container-forge to ansible-forge at 0600.
+
+-	sync-base-image.sh
+
+Finally we have the play scripts for each build role that signs the build.log when a build ends.
+
+-	play_build_grafana_stack.sh
+-	play_build_guac_release.sh
+
+Still need to find the files that deal with deleting and recreating the subdirectories  in provenance for:
+
+-	container-forge
+-	ccop
+-	nucleus
+
+•	Found it! 
+
+-	clean_task.yml
+
+The entire point of this revision is to delete those directories and recreate them so that scan results from previous builds don’t accumulate.
+The only scans in those directories should be for one build run. At this point I’m not even sure how molecule is handling it’s items but everything should be in concert.
+Also, the Molecule weekly tests yesterday for the Guacamole stack, specifically nucleus images failed. A day after we got it working for the ccop/postgres sql import. 
+The dashboard doesn’t pinpoint or identify if it’s all images or just one. I don’t know what the best approach would be for the dashboard, have it breakdown each image in a stack or simply a notice to check log at such and such location, or even a table that shows errors encountered that caused the failure?

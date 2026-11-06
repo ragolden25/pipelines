@@ -1,0 +1,15 @@
+To install, as ansible on ansible-forge:
+
+cp /opt/ansible/nucleus/playbooks/build_grafana_stack.yml{,.pre-split}
+tar -xzf grafana-quarterly-split.tar.gz -C /
+
+Two things outside this task need your attention:
+
+The quarterly trigger doesn’t exist. Ansible’s crontab runs /opt/ansible/scripts/check_new_quarter.sh on the 1st, but Nov 1’s log says No such file or directory. 
+Jan 1 won’t start the Q2 build until that’s fixed. If the script lives somewhere else, the crontab path just needs changing.
+Old signatures and scan results pile up in each new quarter. The seed copies all of the previous quarter’s provenance files, 
+and the clean step never removes old signatures. That’s pre-existing, but IA will see last quarter’s files in every release. It’s an easy follow-up.
+
+As for months or years: your weekly framework did most of the design work here. The new roles copy its layout almost line for line. 
+Next up is the same split for Guacamole, which should mostly be a new set of quarterly_component definitions.
+

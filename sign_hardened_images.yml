@@ -1,0 +1,31 @@
+---
+# 1. Find hardened image tarballs
+- name: Find hardened image tarballs
+  ansible.builtin.find:
+    paths: "{{ grafana_files }}/{{ quarter }}/images"
+    patterns: "nucleus-*.tar.gz"
+  register: hardened_image_files
+
+# 2. Build hardened_images list from filenames
+- name: Build hardened_images list from filenames
+  set_fact:
+    hardened_images: "{{ hardened_images | default([]) + [ {
+      'name': item.path | basename | regex_replace('^nucleus-(.*)-([0-9.]+)\\.tar\\.gz$', '\\1'),
+      'version': item.path | basename | regex_replace('^nucleus-(.*)-([0-9.]+)\\.tar\\.gz$', '\\2')
+    } ] }}"
+  loop: "{{ hardened_image_files.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+
+# 3. Sign hardened image tarballs
+- name: Sign hardened image tarball
+  become: true
+  become_user: root
+  failed_when: false
+  ansible.builtin.shell: >
+    gpg --batch --yes --pinentry-mode loopback --detach-sign
+    --output {{ grafana_files }}/{{ quarter }}/provenance/nucleus/nucleus-{{ item.name }}-{{ item.version }}.tar.gz.asc
+    {{ grafana_files }}/{{ quarter }}/images/nucleus-{{ item.name }}-{{ item.version }}.tar.gz
+  loop: "{{ hardened_images }}"
+  loop_control:
+    label: "{{ item.name }}"

@@ -1,0 +1,94 @@
+---
+# =========================================================
+# Ensure quarterly delivery directory exists
+# =========================================================
+
+- name: Build current SAFE_NAME list
+  ansible.builtin.set_fact:
+    current_safe_names: "{{ all_images | map('regex_replace', '[^a-zA-Z0-9]', '_') | list }}"
+
+- name: Ensure quarterly delivery directory exists
+  file:
+    path: "{{ grafana_files }}/{{ quarter }}"
+    state: directory
+    mode: "2770"
+  delegate_to: localhost
+
+# =========================================================
+# Remove metadata files
+# =========================================================
+- name: Remove metadata files
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ grafana_files }}/{{ quarter }}/metadata.json"
+    - "{{ grafana_files }}/{{ quarter }}/build_info.json"
+    - "{{ grafana_files }}/{{ quarter }}/versions.env"
+
+# =========================================================
+# Remove rendered compose/env files
+# =========================================================
+- name: Remove rendered compose/env files
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ grafana_files }}/{{ quarter }}/docker-compose.yml"
+    - "{{ grafana_files }}/{{ quarter }}/.env"
+
+# =========================================================
+# Clean tar.gz ONLY in images/ — preserve Debian base
+# =========================================================
+- name: Find tarballs in images directory
+  find:
+    paths: "{{ grafana_files }}/{{ quarter }}/images"
+    patterns: "*.tar.gz"
+    recurse: yes
+  register: image_tarballs
+
+- name: Delete image tarballs except Debian base image
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ image_tarballs.files }}"
+  when: "'debian13-' not in item.path"
+
+# =========================================================
+# Clean tar.gz ONLY in provenance/ — preserve container-forge
+# =========================================================
+- name: Find tarballs in provenance directory
+  find:
+    paths: "{{ grafana_provenance_root }}"
+    patterns: "*.tar.gz"
+    recurse: yes
+  register: prov_tarballs
+
+- name: Delete provenance tarballs except Debian base + container-forge
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ prov_tarballs.files }}"
+  when:
+    - "'debian13-' not in item.path"
+
+- name: Find all provenance artifacts
+  ansible.builtin.find:
+    paths:
+      - "{{ grafana_files }}/{{ quarter }}/provenance/ccop"
+      - "{{ grafana_files }}/{{ quarter }}/provenance/nucleus"
+      - "{{ grafana_files }}/{{ quarter }}/provenance/container-forge"
+    patterns:
+      - "*.json"
+      - "*.html"
+      - "*.csv"
+      - "*.log"
+  register: provenance_files
+
+- name: Remove old provenance artifacts
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ provenance_files.files }}"
+  when: >
+    current_safe_names | select("in", item.path) | list | length == 0

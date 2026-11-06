@@ -1,0 +1,39 @@
+---
+# Base image only signed by Container-Forge at daily 0500 build time
+# Ansible Forge does NOT sign images it didn't build
+
+- name: Sign SBOM report
+  become: true
+  become_user: root
+  ansible.builtin.shell: >
+    gpg --batch --yes --pinentry-mode loopback --detach-sign
+    --output {{ grafana_files }}/{{ quarter }}/provenance/container-forge/container-forge-{{ item.name }}-{{ item.version }}.sbom.asc
+    {{ grafana_files }}/{{ quarter }}/provenance/container-forge/container-forge-{{ item.name }}-{{ item.version }}.sbom.json
+  loop: "{{ base_images }}"
+  loop_control:
+    label: "{{ item.name }}"
+  ignore_errors: yes
+
+- name: Sign vulnerability CSV
+  become: true
+  become_user: root
+  ansible.builtin.shell: >
+    gpg --batch --yes --pinentry-mode loopback --detach-sign
+    --output {{ grafana_files }}/{{ quarter }}/provenance/container-forge/container-forge-{{ item.name }}-{{ item.version }}.vuln.asc
+    {{ grafana_files }}/{{ quarter }}/provenance/container-forge/container-forge-{{ item.name }}-{{ item.version }}-*.vuln.csv
+  loop: "{{ base_images }}"
+  loop_control:
+    label: "{{ item.name }}"
+  ignore_errors: yes
+
+- name: Sign OpenSCAP report
+  become: true
+  become_user: root
+  ansible.builtin.shell: >
+    gpg --batch --yes --pinentry-mode loopback --detach-sign
+    --output {{ grafana_files }}/{{ quarter }}/provenance/container-forge/container-forge-{{ item.name }}-{{ item.version }}.scap.asc
+    {{ grafana_files }}/{{ quarter }}/provenance/container-forge/container-forge-{{ item.name }}-{{ item.version }}.scap.xml
+  loop: "{{ base_images }}"
+  loop_control:
+    label: "{{ item.name }}"
+  ignore_errors: yes

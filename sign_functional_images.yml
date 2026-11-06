@@ -1,0 +1,32 @@
+---
+# 1. Find functional image tarballs
+- name: Find functional image tarballs
+  ansible.builtin.find:
+    paths: "{{ grafana_files }}/{{ quarter }}/images"
+    patterns: "ccop-*.tar.gz"
+  register: functional_image_files
+
+# 2. Build functional_images list from filenames
+- name: Build functional_images list from filenames
+  set_fact:
+    functional_images: "{{ functional_images | default([]) + [ {
+      'name': item.path | basename | regex_replace('^ccop-(.*)-([0-9.]+)\\.tar\\.gz$', '\\1'),
+      'version': item.path | basename | regex_replace('^ccop-(.*)-([0-9.]+)\\.tar\\.gz$', '\\2')
+    } ] }}"
+  loop: "{{ functional_image_files.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+
+# 3. Sign functional image tarballs
+- name: Sign functional image tarball
+  become: true
+  become_user: root
+  failed_when: false
+  ansible.builtin.shell: >
+    gpg --batch --yes --pinentry-mode loopback --detach-sign
+    --output {{ grafana_files }}/{{ quarter }}/provenance/ccop/ccop-{{ item.name }}-{{ item.version }}.tar.gz.asc
+    {{ grafana_files }}/{{ quarter }}/images/ccop-{{ item.name }}-{{ item.version }}.tar.gz
+  loop: "{{ functional_images }}"
+  loop_control:
+    label: "{{ item.name }}"
+[ansible@ansible-forge tasks]$
